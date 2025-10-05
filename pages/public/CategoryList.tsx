@@ -20,33 +20,36 @@ const CategoryList: React.FC = () => {
 
       const { data: catData, error: catError } = await supabase
         .from('categories')
-        // FIX: Changed select to fetch all fields to match the 'Category' type.
-        .select('*')
+        .select('id, name, slug')
         .eq('slug', slug)
         .single();
-      
+
       if (catError || !catData) {
         setError('Categoría no encontrada.');
         setLoading(false);
         return;
       }
-      
+
       setCategory(catData);
 
-      const { data, error } = await supabase
-        .from('suppliers')
-        // FIX: Changed select to fetch all fields to match the 'Supplier' type.
-        .select('*')
-        .eq('category_id', catData.id)
+      // Consulta proveedores por join nativo
+      const { data: provs, error: provErr } = await supabase
+        .from('providers')
+        .select(`
+          id, name, description, website, instagram, facebook,
+          is_active, featured, profile_image_url,
+          provider_categories!inner(category_id)
+        `)
+        .eq('provider_categories.category_id', catData.id)
         .eq('is_active', true)
-        .order('is_featured', { ascending: false })
+        .order('featured', { ascending: false })
         .order('name', { ascending: true });
 
-      if (error) {
+      if (provErr) {
         setError('Error al cargar proveedores.');
-        console.error(error);
+        console.error(provErr);
       } else {
-        setSuppliers(data);
+        setSuppliers(provs || []);
       }
       setLoading(false);
     };
@@ -82,7 +85,7 @@ const CategoryList: React.FC = () => {
             >
               <div className="relative">
                 <img 
-                  src={sup.logo_url || `https://picsum.photos/seed/${sup.id}/400/250`} 
+                  src={sup.profile_image_url || `https://picsum.photos/seed/${sup.id}/400/250`} 
                   alt={sup.name}
                   className="w-full h-48 object-cover" 
                 />

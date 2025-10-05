@@ -1,5 +1,3 @@
-// env.ts
-export const env = {
-  VITE_SUPABASE_URL: (globalThis as any).VITE_SUPABASE_URL || "",
-  VITE_SUPABASE_ANON_KEY: (globalThis as any).VITE_SUPABASE_ANON_KEY || ""
-};
+
+export const VITE_SUPABASE_URL = "https://tbtivlwldbwwoclraiue.supabase.co";
+export const VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRidGl2bHdsZGJ3d29jbHJhaXVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzNjczNDQsImV4cCI6MjA3NDk0MzM0NH0.LoC4fxE1xfwqXaN1PBHioa6h8JKf_o2qL5vWexKR2No";
