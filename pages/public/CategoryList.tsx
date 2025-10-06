@@ -78,28 +78,43 @@ const CategoryList: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {suppliers.map(sup => (
-            <Link 
-              to={`/proveedor/${sup.id}`} 
-              key={sup.id} 
-              className="group bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300"
-            >
+            <div key={sup.id} className="group bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col">
               <div className="relative">
                 <img 
                   src={sup.profile_image_url || `https://picsum.photos/seed/${sup.id}/400/250`} 
                   alt={sup.name}
                   className="w-full h-48 object-cover" 
                 />
-                {sup.is_featured && (
-                  <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded">
-                    DESTACADO
+                {sup.featured && (
+                  <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
+                    <span className="text-lg">★</span> DESTACADO
                   </div>
                 )}
               </div>
-              <div className="p-4">
-                <h3 className="text-xl font-bold text-gray-800">{sup.name}</h3>
-                <p className="text-gray-600 mt-2 line-clamp-2">{sup.description}</p>
+              <div className="p-4 flex-1 flex flex-col justify-between">
+                <h3 className="text-xl font-bold text-gray-800 mb-2 flex items-center">
+                  {sup.featured && <span className="text-yellow-500 mr-1">★</span>}
+                  {sup.name}
+                </h3>
+                <p className="text-gray-600 mb-4 line-clamp-2">{sup.description}</p>
+                <div className="flex gap-2 mt-auto">
+                  <Link
+                    to={`/proveedor/${sup.id}`}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded shadow transition flex items-center gap-2 w-full justify-center"
+                  >
+                    Ver detalles
+                  </Link>
+                  <a
+                    href={`https://wa.me/${sup.contact?.whatsapp ? sup.contact.whatsapp.replace(/\D/g, '') : ''}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full flex items-center gap-2 shadow transition w-full justify-center"
+                  >
+                    Cotizar por WhatsApp
+                  </a>
+                </div>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

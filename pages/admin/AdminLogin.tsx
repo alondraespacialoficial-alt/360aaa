@@ -58,13 +58,20 @@ const AdminLogin: React.FC = () => {
             />
           </div>
           {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 items-center justify-between">
             <button
               type="submit"
               disabled={loading}
               className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full flex justify-center items-center"
             >
               {loading ? <Spinner /> : 'Iniciar Sesión'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full mt-2"
+            >
+              Ir a página principal
             </button>
           </div>
         </form>
