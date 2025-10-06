@@ -106,14 +106,14 @@ const ManageSuppliers: React.FC = () => {
     const [newMedia, setNewMedia] = useState<File | null>(null);
 
     const fetchSuppliers = useCallback(async () => {
-                setLoading(true);
-                const { data, error } = await supabase
-                    .from('providers')
-                    .select(`id, name, is_active, featured, profile_image_url, provider_categories!inner(category_id)`)
-                    .order('name');
-                if (error) console.error("Error fetching suppliers", error);
-                else setSuppliers(data as any);
-                setLoading(false);
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('providers')
+            .select('*')
+            .order('name');
+        if (error) console.error("Error fetching suppliers", error);
+        else setSuppliers(data as any);
+        setLoading(false);
     }, []);
 
     useEffect(() => {

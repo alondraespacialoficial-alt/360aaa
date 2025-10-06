@@ -5,6 +5,7 @@ export interface ContactDetails {
   email?: string;
   instagram?: string;
   maps_url?: string;
+  facebook?: string;
 }
 
 export interface Category {
