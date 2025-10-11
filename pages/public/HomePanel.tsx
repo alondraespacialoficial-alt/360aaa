@@ -73,8 +73,28 @@ const HomePanel: React.FC = () => {
       <ValueProps />
       <FeaturedStrip />
       <header className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-gray-800">Directorio de Proveedores</h1>
-        <p className="text-gray-600 mt-2">Encuentra los mejores servicios para tu evento.</p>
+        <h1 className="text-4xl font-bold text-purple-800 mb-2">Charlitron Eventos 360: el lugar donde los eventos cobran vida</h1>
+        <p className="text-lg text-gray-700 mb-4">
+          Encuentra proveedores verificados, cotiza al instante y crea el evento que todos recordarán.<br />
+          Haz que tu experiencia sea rápida, segura y sin sorpresas.<br />
+          <span className="block mt-2 text-xl">🎯 Porque tu evento no merece improvisación, merece perfección.</span>
+        </p>
+        <div className="mt-6 mb-6">
+          <h2 className="text-xl font-bold text-purple-600 mb-2">💎 Beneficios principales</h2>
+          <ul className="list-disc pl-6 text-gray-700 text-left inline-block">
+            <li><b>🔹 Directorio verificado:</b> Todos los proveedores han sido evaluados para ofrecerte calidad, confianza y claridad en cada servicio.</li>
+            <li><b>🔹 Cotiza al instante:</b> Habla directo por WhatsApp, sin intermediarios ni formularios complicados. Un clic, una cotización.</li>
+            <li><b>🔹 Mayor visibilidad:</b> ¿Eres proveedor? Muestra tu talento, sube fotos de tus servicios y obtén la exposición que tu marca merece.</li>
+          </ul>
+        </div>
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-purple-600 mb-2">💬 ¿Por qué elegir Charlitron Eventos 360?</h2>
+          <p className="text-gray-700">Mayor velocidad: ves fotos reales, contactas al instante y eliges con confianza.<br />Aquí la planeación se convierte en emoción… y cada detalle brilla como tú lo imaginaste. ✨</p>
+        </div>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-purple-700 mb-2">💜 Tu evento ideal empieza aquí.</h2>
+          <p className="text-lg text-gray-700">Cotiza, compara y conecta con los mejores.<br /><b>Charlitron Eventos 360 – Donde cada clic te acerca a la celebración perfecta.</b></p>
+        </div>
         <div className="mt-4 flex items-center justify-center gap-2">
           <a href="/admin/panel" className="inline-block px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition">Acceso Admin</a>
           <Link to="/proveedores/planes" className="ml-3 rounded-lg px-3 py-2 bg-indigo-600 text-white hover:bg-indigo-700">
@@ -83,14 +103,14 @@ const HomePanel: React.FC = () => {
         </div>
       </header>
       <div className="mb-8 relative">
-        <input 
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar proveedor por nombre..."
-          className="w-full p-4 pl-12 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
-        />
-        <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400" />
+          <input 
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar proveedor por nombre..."
+            className="w-full p-4 pl-12 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+          />
+          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400" />
       </div>
       {loading ? (
         <div className="flex justify-center items-center h-64">
