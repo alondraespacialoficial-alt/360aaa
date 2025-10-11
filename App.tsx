@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext';
 import HomePanel from './pages/public/HomePanel';
 import CategoryList from './pages/public/CategoryList';
 import SupplierDetail from './pages/public/SupplierDetail';
+import PlanesProveedor from './src/pages/proveedores/planes';
 
 // Admin pages and layout
 import AdminLogin from './pages/admin/AdminLogin';
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/embed" element={<HomePanel />} />
             <Route path="/categoria/:slug" element={<CategoryList />} />
             <Route path="/proveedor/:id" element={<SupplierDetail />} />
+            <Route path="/proveedores/planes" element={<PlanesProveedor />} />
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLogin />} />
