@@ -157,11 +157,21 @@ const ManagePlans: React.FC = () => {
                             <div key={plan.id} className="bg-white rounded-xl shadow-lg border border-purple-100 p-6 flex flex-col justify-between">
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
+                                        <label className="font-bold text-lg text-purple-700">Nombre:</label>
                                         <input type="text" value={edit.name} onChange={e => handleEditChange(plan.id, 'name', e.target.value)} className="font-bold text-lg text-purple-700 bg-transparent border-b border-purple-200 focus:outline-none w-2/3" />
+                                    </div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-xl font-bold text-green-700">Precio:</label>
                                         <input type="number" value={edit.price} onChange={e => handleEditChange(plan.id, 'price', e.target.value)} className="text-xl font-bold text-green-700 bg-transparent border-b border-green-200 focus:outline-none w-1/3 text-right" />
                                     </div>
-                                    <textarea value={edit.description} onChange={e => handleEditChange(plan.id, 'description', e.target.value)} className="w-full mb-2 p-2 border rounded focus:outline-purple-400 resize-none" rows={2} />
-                                    <input type="text" value={edit.services_included} onChange={e => handleEditChange(plan.id, 'services_included', e.target.value)} className="w-full mb-2 p-2 border rounded focus:outline-purple-400" placeholder="Servicios incluidos" />
+                                    <div className="mb-2">
+                                        <label className="font-semibold">Descripción:</label>
+                                        <textarea value={edit.description} onChange={e => handleEditChange(plan.id, 'description', e.target.value)} className="w-full mb-2 p-2 border rounded focus:outline-purple-400 resize-none" rows={2} />
+                                    </div>
+                                    <div className="mb-2">
+                                        <label className="font-semibold">Beneficios / Servicios incluidos:</label>
+                                        <input type="text" value={edit.services_included} onChange={e => handleEditChange(plan.id, 'services_included', e.target.value)} className="w-full mb-2 p-2 border rounded focus:outline-purple-400" placeholder="Servicios incluidos" />
+                                    </div>
                                 </div>
                                 <div className="flex justify-end gap-2 mt-4">
                                     <button className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold shadow hover:bg-green-700 transition" onClick={() => handleSave(plan.id)}>Guardar</button>
@@ -172,16 +182,9 @@ const ManagePlans: React.FC = () => {
                     })}
                 </div>
             )}
-            <div className="mb-8 p-6 bg-white rounded-xl shadow-lg border border-purple-100 max-w-xl mx-auto">
-                <h3 className="font-bold mb-4 text-lg text-purple-600">Agregar nuevo plan</h3>
-                {error && <div className="mb-2 text-red-600 font-semibold">{error}</div>}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <input value={addName} onChange={e => setAddName(e.target.value)} placeholder="Nombre" className="p-3 border rounded-lg w-full focus:outline-purple-400" maxLength={100} />
-                    <input value={addPrice} onChange={e => setAddPrice(e.target.value)} placeholder="Precio" className="p-3 border rounded-lg w-full focus:outline-purple-400" maxLength={20} />
-                </div>
-                <textarea value={addDesc} onChange={e => setAddDesc(e.target.value)} placeholder="Descripción" className="mb-4 p-3 border rounded-lg w-full focus:outline-purple-400" maxLength={500} rows={2} />
-                <input value={addServices} onChange={e => setAddServices(e.target.value)} placeholder="Servicios incluidos (separados por coma)" className="mb-4 p-3 border rounded-lg w-full focus:outline-purple-400" maxLength={200} />
-                <button onClick={handleAdd} className="px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold shadow hover:bg-purple-700 transition">Agregar</button>
+            {/* Formulario de agregar plan oculto intencionalmente para evitar duplicados */}
+            <div className="mb-8 p-6 bg-gray-100 rounded-xl shadow-lg border border-purple-100 max-w-xl mx-auto text-center">
+                <span className="text-purple-700 font-semibold">Solo puedes editar los planes existentes. Si necesitas agregar más, contacta al administrador.</span>
             </div>
         </div>
     );
@@ -464,7 +467,7 @@ const ManageSuppliers: React.FC = () => {
             </div>
             <div className="mb-6 p-4 bg-gray-50 rounded shadow">
                 <h3 className="font-bold mb-2">Agregar nuevo proveedor</h3>
-                {/* Inputs de alta de proveedor */}
+                {/* Inputs de >lta de provo */}
                 <input value={name} onChange={e => setName(e.target.value)} placeholder="Nombre" className="mb-2 p-2 border rounded w-full" maxLength={100} />
                 <input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="Contacto" className="mb-2 p-2 border rounded w-full" maxLength={100} />
                 <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className="mb-2 p-2 border rounded w-full" maxLength={100} />
