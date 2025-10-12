@@ -82,11 +82,14 @@ const HomePanel: React.FC = () => {
   }, []);
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans">
+  <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans">
       <Hero />
       <ValueProps />
       <FeaturedStrip />
       <header className="mb-8 text-center">
+        <div className="flex justify-center mb-4">
+          <img src="https://vvrl.cc/api/image/kq8w7e/view" alt="Logo Charlitron" className="h-32 w-auto mx-auto" style={{maxWidth: '260px'}} />
+        </div>
         <div className="mb-4 flex justify-center">
           <Link to="/blog" className="inline-block px-5 py-2 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600 transition font-semibold">
             🎉 Tips para tus eventos
