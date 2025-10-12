@@ -63,6 +63,8 @@ export default function SupplierDetail() {
   const [cart, setCart] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [modalImg, setModalImg] = useState("");
 
   useEffect(() => {
     async function fetchDetails() {
@@ -133,6 +135,12 @@ export default function SupplierDetail() {
 
   return (
     <div className="max-w-7xl mx-auto font-sans bg-white">
+      {/* Modal de imagen grande */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50" onClick={() => setShowModal(false)}>
+          <img src={modalImg} alt="Imagen grande" className="max-w-full max-h-[80vh] rounded-xl shadow-2xl border-4 border-white" />
+        </div>
+      )}
       {/* Información del proveedor */}
       {supplier && (
         <div className="p-4 md:p-6 bg-gray-50 border-b mb-6">
@@ -192,9 +200,15 @@ export default function SupplierDetail() {
               </div>
             </div>
           </div>
-          {/* Imagen de portada */}
+          {/* Imagen de portada con click para modal */}
           {supplier.cover_image && (
-            <img src={supplier.cover_image} alt="Portada" className="w-full h-48 object-cover rounded-lg mb-4 border-4 border-purple-200" />
+            <img
+              src={supplier.cover_image}
+              alt="Portada"
+              className="w-full h-48 object-cover rounded-lg mb-4 border-4 border-purple-200 cursor-pointer"
+              onClick={() => { setModalImg(supplier.cover_image); setShowModal(true); }}
+              title="Haz clic para ver en grande"
+            />
           )}
           {/* Imágenes adicionales */}
           {supplier.media && supplier.media.length > 0 && (
