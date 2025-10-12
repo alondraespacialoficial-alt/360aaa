@@ -1,5 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
+// Aviso legal básico al pie de la página
+const LegalNotice = () => (
+  <div style={{ marginTop: '2rem', padding: '1rem', fontSize: '0.9rem', color: '#555', background: '#f9f9f9', borderRadius: '8px' }}>
+    <strong>Aviso de Privacidad y Legal – Charlitron® Eventos 360 Directorio de Proveedores</strong><br /><br />
+    Charlitron® Eventos 360 informa que los datos publicados en este directorio de proveedores son utilizados únicamente con el objetivo de dar a conocer los productos y servicios ofrecidos por cada proveedor dentro de nuestra plataforma. La información proporcionada no se comparte, transfiere ni vende a terceros; su uso se limita a la exhibición pública dentro del directorio para facilitar el contacto comercial.<br /><br />
+    Charlitron® Eventos 360 actúa únicamente como un directorio digital de visualización y promoción; cada proveedor es independiente y responsable exclusivo de sus productos, servicios y cumplimiento. Charlitron® Eventos 360 no interviene ni responde por acuerdos, garantías, entregas, calidad, pagos, incumplimientos, reclamaciones o controversias derivadas de la relación directa entre proveedor y cliente.<br /><br />
+    Al registrarse o aparecer en este directorio, el proveedor acepta y reconoce que Charlitron® Eventos 360 se deslinda expresamente de toda responsabilidad por actos, omisiones o conductas posteriores, siendo únicamente un medio de exposición y contacto visual.<br /><br />
+    Para dudas, aclaraciones o ejercicio de derechos sobre datos personales (acceso, rectificación, cancelación u oposición), comuníquese a: <a href="mailto:ventas@charlitron.com">ventas@charlitron.com</a><br /><br />
+    Este aviso puede actualizarse en cualquier momento, notificándose en esta misma página.<br />
+    <em>Última actualización: 12 de octubre de 2025</em>
+  </div>
+);
 import { Link } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 import type { Category } from '../../types';
@@ -17,6 +29,7 @@ const HomePanel: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [city, setCity] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,8 +48,8 @@ const HomePanel: React.FC = () => {
       }
       // Proveedores
       const { data: provData, error: provError } = await supabase
-        .from('providers')
-        .select('id, name, description, profile_image_url, featured, is_active')
+  .from('providers')
+  .select('id, name, description, profile_image_url, featured, is_active, city, state')
         .eq('is_active', true)
         .order('featured', { ascending: false })
         .order('name', { ascending: true });
@@ -102,15 +115,26 @@ const HomePanel: React.FC = () => {
           </Link>
         </div>
       </header>
-      <div className="mb-8 relative">
+      <div className="mb-8 flex flex-col md:flex-row gap-4 items-center relative">
+        <div className="relative w-full md:w-2/3">
           <input 
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar proveedor por nombre..."
+            placeholder="Buscar proveedor por nombre o servicio..."
             className="w-full p-4 pl-12 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
           />
           <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400" />
+        </div>
+        <div className="w-full md:w-1/3">
+          <input
+            type="text"
+            value={city}
+            onChange={e => setCity(e.target.value)}
+            placeholder="Filtrar por ciudad..."
+            className="w-full p-4 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+          />
+        </div>
       </div>
       {loading ? (
         <div className="flex justify-center items-center h-64">
@@ -146,14 +170,19 @@ const HomePanel: React.FC = () => {
               {[...suppliers.filter(s => s.featured), ...suppliers.filter(s => !s.featured)]
                 .filter(sup => {
                   const term = search.toLowerCase();
-                  // Buscar en nombre, descripción y servicios
+                  const cityTerm = city.toLowerCase();
+                  // Buscar en nombre, descripción, servicios, ciudad y estado
                   const matchName = sup.name.toLowerCase().includes(term);
                   const matchDesc = sup.description && sup.description.toLowerCase().includes(term);
                   const matchService = servicesByProvider[sup.id]?.some(serv =>
                     serv.name.toLowerCase().includes(term) ||
                     (serv.description && serv.description.toLowerCase().includes(term))
                   );
-                  return term === '' || matchName || matchDesc || matchService;
+                  const matchCity = sup.city && sup.city.toLowerCase().includes(cityTerm);
+                  const matchState = sup.state && sup.state.toLowerCase().includes(cityTerm);
+                  // Si no hay filtro de ciudad/estado, ignora
+                  const cityFilter = cityTerm === '' || matchCity || matchState;
+                  return (term === '' || matchName || matchDesc || matchService) && cityFilter;
                 })
                 .map(sup => (
                   <Link 
@@ -186,6 +215,7 @@ const HomePanel: React.FC = () => {
           </div>
         </>
       )}
+      <LegalNotice />
     </div>
   );
 }
