@@ -662,6 +662,11 @@ const AdminPanel: React.FC = () => {
             <ManageSuppliers />
             <ManagePlans />
             <AdminReviews />
+            <div className="mt-8 flex justify-center">
+                <a href="/admin/blog" className="inline-block px-5 py-2 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600 transition font-semibold">
+                    ✍️ Publicar artículo en Blog
+                </a>
+            </div>
         </div>
     );
 };

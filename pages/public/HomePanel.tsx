@@ -25,6 +25,7 @@ import { StarIcon } from '@heroicons/react/24/solid';
 const HomePanel: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [showCookies, setShowCookies] = useState(true);
   const [servicesByProvider, setServicesByProvider] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +87,11 @@ const HomePanel: React.FC = () => {
       <ValueProps />
       <FeaturedStrip />
       <header className="mb-8 text-center">
+        <div className="mb-4 flex justify-center">
+          <Link to="/blog" className="inline-block px-5 py-2 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600 transition font-semibold">
+            🎉 Tips para tus eventos
+          </Link>
+        </div>
         <h1 className="text-4xl font-bold text-purple-800 mb-2">Charlitron Eventos 360: el lugar donde los eventos cobran vida</h1>
         <p className="text-lg text-gray-700 mb-4">
           Encuentra proveedores verificados, cotiza al instante y crea el evento que todos recordarán.<br />
@@ -215,7 +221,17 @@ const HomePanel: React.FC = () => {
           </div>
         </>
       )}
-      <LegalNotice />
+      {showCookies && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded shadow-lg z-50 flex items-center gap-4">
+          <span>Este sitio utiliza cookies para mejorar tu experiencia. Al continuar, aceptas nuestro uso de cookies.</span>
+          <button onClick={() => setShowCookies(false)} className="bg-purple-600 px-3 py-1 rounded text-white hover:bg-purple-700 transition">Aceptar</button>
+        </div>
+      )}
+      <div className="mt-8 text-center">
+        <Link to="/legal" className="text-sm text-gray-600 underline hover:text-purple-700">
+          Aviso de Privacidad y Legal
+        </Link>
+      </div>
     </div>
   );
 }
