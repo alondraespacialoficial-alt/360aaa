@@ -128,6 +128,10 @@ export default function PlanesProveedor() {
             <li>Publicamos tu ficha y te mandamos el link para revisar.</li>
           </ol>
         </div>
+
+        <div className="mt-6 rounded-xl bg-indigo-50 px-6 py-4 text-indigo-900 font-medium">
+          <strong>Tu evento perfecto empieza aquí 💍🎉</strong> Encuentra proveedores reales, cotiza al instante y planea sin estrés.
+        </div>
       </section>
     </main>
   );

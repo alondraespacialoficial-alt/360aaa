@@ -86,8 +86,16 @@ export default function SupplierDetail() {
         .select('*')
         .eq('provider_id', id);
 
+      // Traer reseñas
+      const { data: reviewsData } = await supabase
+        .from('provider_reviews')
+        .select('*')
+        .eq('provider_id', id)
+        .order('created_at', { ascending: false });
+
       // Unir servicios e imágenes al proveedor
       setSupplier(providerData ? { ...providerData, services: servicesData || [], media: mediaData || [] } : null);
+      setReviews(reviewsData || []);
       setLoading(false);
     }
     fetchDetails();
@@ -240,6 +248,28 @@ export default function SupplierDetail() {
                 Cotizar por WhatsApp
               </button>
             )}
+          </div>
+          {/* Formulario y lista de reseñas */}
+          <div className="mt-10">
+            <h2 className="text-xl font-semibold text-purple-700 mb-4">Reseñas de Proveedores</h2>
+            <ReviewForm providerId={supplier.id} onNewReview={review => setReviews([review, ...reviews])} />
+            <div className="mt-6">
+              {reviews.length === 0 ? (
+                <p className="text-gray-500">No hay reseñas aún.</p>
+              ) : (
+                <ul className="space-y-4">
+                  {reviews.map(r => (
+                    <li key={r.id} className="p-4 bg-white border rounded shadow">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-yellow-500">{'★'.repeat(r.rating)}</span>
+                        <span className="text-gray-700 font-semibold">{r.comment}</span>
+                      </div>
+                      <div className="text-xs text-gray-400">{r.created_at?.slice(0,10)}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
       )}
