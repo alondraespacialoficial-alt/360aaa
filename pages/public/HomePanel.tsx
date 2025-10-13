@@ -21,7 +21,7 @@ import { CHARLITRON_FACEBOOK_URL, CHARLITRON_INSTAGRAM_URL } from '../../env';
 import Hero from '../../src/components/Hero';
 import ValueProps from '../../src/components/ValueProps';
 import FeaturedStrip from '../../src/components/FeaturedStrip';
-import categoryIcons from '../../components/CategoryIcons';
+import CategoryIcon from '../../components/CategoryIcons';
 import { StarIcon } from '@heroicons/react/24/solid';
 
 const HomePanel: React.FC = () => {
@@ -182,8 +182,8 @@ const HomePanel: React.FC = () => {
                   className="group flex flex-col items-center justify-center p-4 bg-white rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
                 >
                   {/* Ícono profesional para la categoría */}
-                  <span className="mb-3 flex items-center justify-center">
-                    {categoryIcons[cat.name.toLowerCase()] || <StarIcon className="h-10 w-10 text-gray-400" />}
+                  <span className="mb-3 flex items-center justify-center text-2xl">
+                    <CategoryIcon category={cat.name} />
                   </span>
                   <span className="text-center font-semibold text-gray-700">{cat.name}</span>
                 </Link>
