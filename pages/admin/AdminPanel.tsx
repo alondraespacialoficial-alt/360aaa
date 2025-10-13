@@ -50,7 +50,8 @@ const AdminReviews: React.FC = () => {
 };
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { supabase } from '../../services/supabaseClient';
+import { supabase } from "../../services/supabaseClient";
+import VideoAdmin from "./VideoAdmin";
 
 
 
@@ -661,6 +662,12 @@ const AdminPanel: React.FC = () => {
         <div className="p-6">
             <ManageSuppliers />
             <ManagePlans />
+            
+            {/* Gestión de Videos */}
+            <div className="mt-10 border-t pt-10">
+                <VideoAdmin />
+            </div>
+            
             <AdminReviews />
             <div className="mt-8 flex justify-center">
                 <a href="/admin/blog" className="inline-block px-5 py-2 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600 transition font-semibold">

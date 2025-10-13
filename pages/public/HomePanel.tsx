@@ -22,6 +22,7 @@ import Hero from '../../src/components/Hero';
 import ValueProps from '../../src/components/ValueProps';
 import FeaturedStrip from '../../src/components/FeaturedStrip';
 import CategoryIcon from '../../components/CategoryIcons';
+import VideoSection from '../../components/VideoSection';
 import { StarIcon } from '@heroicons/react/24/solid';
 
 const HomePanel: React.FC = () => {
@@ -93,6 +94,10 @@ const HomePanel: React.FC = () => {
       <Hero />
       <ValueProps />
       <FeaturedStrip />
+      
+      {/* Sección de video principal */}
+      <VideoSection />
+      
       <header className="mb-8 text-center">
         {/* SEO: JSON-LD Organization con enlaces sociales */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
