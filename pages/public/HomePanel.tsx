@@ -16,6 +16,8 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 import type { Category } from '../../types';
 import { SearchIcon } from '../../components/icons';
+import SocialButtons from '../../components/SocialButtons';
+import { CHARLITRON_FACEBOOK_URL, CHARLITRON_INSTAGRAM_URL } from '../../env';
 import Hero from '../../src/components/Hero';
 import ValueProps from '../../src/components/ValueProps';
 import FeaturedStrip from '../../src/components/FeaturedStrip';
@@ -81,20 +83,36 @@ const HomePanel: React.FC = () => {
     fetchData();
   }, []);
 
+  // SEO: título dinámico de la Home
+  useEffect(() => {
+    document.title = 'Charlitron Eventos 360 | Directorio de proveedores verificados';
+  }, []);
+
   return (
   <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans">
       <Hero />
       <ValueProps />
       <FeaturedStrip />
       <header className="mb-8 text-center">
+        {/* SEO: JSON-LD Organization con enlaces sociales */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: 'Charlitron Eventos 360',
+          url: 'https://charlitron-eventos-360.com',
+          logo: 'https://vvrl.cc/api/image/kq8w7e/view',
+          sameAs: [CHARLITRON_FACEBOOK_URL, CHARLITRON_INSTAGRAM_URL]
+        })}} />
         <div className="flex justify-center mb-4">
           <img src="https://vvrl.cc/api/image/kq8w7e/view" alt="Logo Charlitron" className="h-32 w-auto mx-auto" style={{maxWidth: '260px'}} />
         </div>
         <div className="mb-4 flex justify-center">
-          <Link to="/blog" className="inline-block px-5 py-2 bg-indigo-500 text-white rounded-lg shadow hover:bg-indigo-600 transition font-semibold">
+          <Link to="/blog" className="inline-block px-5 py-2 border border-indigo-600 text-indigo-700 bg-white rounded-lg shadow-sm hover:bg-indigo-50 transition font-semibold">
             🎉 Tips para tus eventos
           </Link>
         </div>
+        {/* Botones de redes sociales (componente reutilizable y responsivo) */}
+  <SocialButtons className="mb-6" size="md" align="center" variant="outline" />
         <h1 className="text-4xl font-bold text-purple-800 mb-2">Charlitron Eventos 360: el lugar donde los eventos cobran vida</h1>
         <p className="text-lg text-gray-700 mb-4">
           Encuentra proveedores verificados, cotiza al instante y crea el evento que todos recordarán.<br />
@@ -154,7 +172,7 @@ const HomePanel: React.FC = () => {
       ) : (
         <>
           {/* Categorías */}
-          <div className="mb-8" id="categorias">
+          <div className="mb-8 transition-all duration-700 ease-out" id="categorias">
             <h2 className="text-xl font-bold mb-2 text-gray-700">Explora por categoría</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
               {categories.filter(c => !!c.slug).map(cat => (
@@ -173,7 +191,7 @@ const HomePanel: React.FC = () => {
             </div>
           </div>
           {/* Proveedores filtrados */}
-          <div>
+          <div className="transition-all duration-700 ease-out" id="proveedores">
             <h2 className="text-xl font-bold mb-2 text-gray-700">Proveedores</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {[...suppliers.filter(s => s.featured), ...suppliers.filter(s => !s.featured)]
@@ -197,13 +215,16 @@ const HomePanel: React.FC = () => {
                   <Link 
                     to={`/proveedor/${sup.id}`}
                     key={sup.id}
-                    className="group bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300"
+                    className="group bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                    aria-label={`Ver detalles de proveedor ${sup.name}`}
                   >
                     <div className="relative">
                       <img 
                         src={sup.profile_image_url || `https://picsum.photos/seed/${sup.id}/400/250`} 
                         alt={sup.name}
                         className="w-full h-48 object-cover" 
+                        loading="lazy"
+                        decoding="async"
                       />
                       {sup.featured && (
                         <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
