@@ -17,10 +17,10 @@ const AdminReviews: React.FC = () => {
     };
 
     return (
-        <div className="mt-10 p-6 bg-white rounded shadow">
+        <div className="mt-10 p-6 bg-theme-secondary border border-theme-primary rounded shadow">
             <h2 className="text-xl font-bold mb-4 text-purple-700">Reseñas de Proveedores</h2>
             {reviews.length === 0 ? (
-                <p className="text-gray-500">No hay reseñas aún.</p>
+                <p className="text-theme-tertiary">No hay reseñas aún.</p>
             ) : (
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -52,6 +52,7 @@ import * as React from "react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../services/supabaseClient";
 import VideoAdmin from "./VideoAdmin";
+import ThemeToggle from "../../components/ThemeToggle";
 
 
 
@@ -659,7 +660,12 @@ const ManageSuppliers: React.FC = () => {
 // Componente principal que renderiza los subcomponentes
 const AdminPanel: React.FC = () => {
     return (
-        <div className="p-6">
+        <div className="p-6 bg-theme-primary min-h-screen relative">
+            {/* Theme Toggle - Posición fija superior derecha */}
+            <div className="fixed top-4 right-4 z-50">
+                <ThemeToggle size="md" />
+            </div>
+            
             <ManageSuppliers />
             <ManagePlans />
             

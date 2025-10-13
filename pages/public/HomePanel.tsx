@@ -23,6 +23,7 @@ import ValueProps from '../../src/components/ValueProps';
 import FeaturedStrip from '../../src/components/FeaturedStrip';
 import CategoryIcon from '../../components/CategoryIcons';
 import VideoSection from '../../components/VideoSection';
+import ThemeToggle from '../../components/ThemeToggle';
 import { StarIcon } from '@heroicons/react/24/solid';
 
 const HomePanel: React.FC = () => {
@@ -90,7 +91,12 @@ const HomePanel: React.FC = () => {
   }, []);
 
   return (
-  <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans">
+  <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans bg-theme-primary min-h-screen">
+      {/* Theme Toggle - Posición fija superior derecha */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle size="md" />
+      </div>
+      
       <Hero />
       <ValueProps />
       <FeaturedStrip />
@@ -119,14 +125,14 @@ const HomePanel: React.FC = () => {
         {/* Botones de redes sociales (componente reutilizable y responsivo) */}
   <SocialButtons className="mb-6" size="md" align="center" variant="outline" />
         <h1 className="text-4xl font-bold text-purple-800 mb-2">Charlitron Eventos 360: el lugar donde los eventos cobran vida</h1>
-        <p className="text-lg text-gray-700 mb-4">
+        <p className="text-lg text-theme-secondary mb-4">
           Encuentra proveedores verificados, cotiza al instante y crea el evento que todos recordarán.<br />
           Haz que tu experiencia sea rápida, segura y sin sorpresas.<br />
           <span className="block mt-2 text-xl">🎯 Porque tu evento no merece improvisación, merece perfección.</span>
         </p>
         <div className="mt-6 mb-6">
           <h2 className="text-xl font-bold text-purple-600 mb-2">💎 Beneficios principales</h2>
-          <ul className="list-disc pl-6 text-gray-700 text-left inline-block">
+          <ul className="list-disc pl-6 text-theme-secondary text-left inline-block">
             <li><b>🔹 Directorio verificado:</b> Todos los proveedores han sido evaluados para ofrecerte calidad, confianza y claridad en cada servicio.</li>
             <li><b>🔹 Cotiza al instante:</b> Habla directo por WhatsApp, sin intermediarios ni formularios complicados. Un clic, una cotización.</li>
             <li><b>🔹 Mayor visibilidad:</b> ¿Eres proveedor? Muestra tu talento, sube fotos de tus servicios y obtén la exposición que tu marca merece.</li>
@@ -134,11 +140,11 @@ const HomePanel: React.FC = () => {
         </div>
         <div className="mb-6">
           <h2 className="text-xl font-bold text-purple-600 mb-2">💬 ¿Por qué elegir Charlitron Eventos 360?</h2>
-          <p className="text-gray-700">Mayor velocidad: ves fotos reales, contactas al instante y eliges con confianza.<br />Aquí la planeación se convierte en emoción… y cada detalle brilla como tú lo imaginaste. ✨</p>
+          <p className="text-theme-secondary">Mayor velocidad: ves fotos reales, contactas al instante y eliges con confianza.<br />Aquí la planeación se convierte en emoción… y cada detalle brilla como tú lo imaginaste. ✨</p>
         </div>
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-purple-700 mb-2">💜 Tu evento ideal empieza aquí.</h2>
-          <p className="text-lg text-gray-700">Cotiza, compara y conecta con los mejores.<br /><b>Charlitron Eventos 360 – Donde cada clic te acerca a la celebración perfecta.</b></p>
+          <p className="text-lg text-theme-secondary">Cotiza, compara y conecta con los mejores.<br /><b>Charlitron Eventos 360 – Donde cada clic te acerca a la celebración perfecta.</b></p>
         </div>
         <div className="mt-4 flex items-center justify-center gap-2">
           <a href="/admin/panel" className="inline-block px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition">Acceso Admin</a>
@@ -154,7 +160,7 @@ const HomePanel: React.FC = () => {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar proveedor por nombre o servicio..."
-            className="w-full p-4 pl-12 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+            className="w-full p-4 pl-12 bg-theme-primary border border-theme-primary text-theme-primary rounded-full shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
           />
           <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400" />
         </div>
@@ -164,7 +170,7 @@ const HomePanel: React.FC = () => {
             value={city}
             onChange={e => setCity(e.target.value)}
             placeholder="Filtrar por ciudad..."
-            className="w-full p-4 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+            className="w-full p-4 bg-theme-primary border border-theme-primary text-theme-primary rounded-full shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
           />
         </div>
       </div>
@@ -178,26 +184,26 @@ const HomePanel: React.FC = () => {
         <>
           {/* Categorías */}
           <div className="mb-8 transition-all duration-700 ease-out" id="categorias">
-            <h2 className="text-xl font-bold mb-2 text-gray-700">Explora por categoría</h2>
+            <h2 className="text-xl font-bold mb-2 text-theme-primary">Explora por categoría</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
               {categories.filter(c => !!c.slug).map(cat => (
                 <Link 
                   to={`/categoria/${cat.slug}`}
                   key={cat.id}
-                  className="group flex flex-col items-center justify-center p-4 bg-white rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
+                  className="group flex flex-col items-center justify-center p-4 bg-theme-primary border border-theme-primary rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
                 >
                   {/* Ícono profesional para la categoría */}
                   <span className="mb-3 flex items-center justify-center text-2xl">
                     <CategoryIcon category={cat.name} />
                   </span>
-                  <span className="text-center font-semibold text-gray-700">{cat.name}</span>
+                  <span className="text-center font-semibold text-theme-primary">{cat.name}</span>
                 </Link>
               ))}
             </div>
           </div>
           {/* Proveedores filtrados */}
           <div className="transition-all duration-700 ease-out" id="proveedores">
-            <h2 className="text-xl font-bold mb-2 text-gray-700">Proveedores</h2>
+            <h2 className="text-xl font-bold mb-2 text-theme-primary">Proveedores</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {[...suppliers.filter(s => s.featured), ...suppliers.filter(s => !s.featured)]
                 .filter(sup => {
@@ -220,7 +226,7 @@ const HomePanel: React.FC = () => {
                   <Link 
                     to={`/proveedor/${sup.id}`}
                     key={sup.id}
-                    className="group bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                    className="group bg-theme-primary border border-theme-primary rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
                     aria-label={`Ver detalles de proveedor ${sup.name}`}
                   >
                     <div className="relative">
@@ -238,11 +244,11 @@ const HomePanel: React.FC = () => {
                       )}
                     </div>
                     <div className="p-4">
-                      <h3 className="text-xl font-bold text-gray-800">
+                      <h3 className="text-xl font-bold text-theme-primary">
                         {sup.featured && <span className="text-yellow-500 mr-1">★</span>}
                         {sup.name}
                       </h3>
-                      <p className="text-gray-600 mt-2 line-clamp-2">{sup.description}</p>
+                      <p className="text-theme-secondary mt-2 line-clamp-2">{sup.description}</p>
                     </div>
                   </Link>
                 ))}

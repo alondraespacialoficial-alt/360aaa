@@ -22,6 +22,62 @@
     <meta name="twitter:description" content="Encuentra proveedores verificados y cotiza al instante por WhatsApp. Organiza tu evento sin sorpresas." />
   <meta name="twitter:image" content="https://vvrl.cc/api/image/kq8w7e/view" />
 
+  <!-- Variables CSS para temas -->
+  <style>
+    :root {
+      /* Tema claro (por defecto) */
+      --bg-primary: #ffffff;
+      --bg-secondary: #f9fafb;
+      --bg-tertiary: #f3f4f6;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --text-tertiary: #9ca3af;
+      --border-primary: #e5e7eb;
+      --border-secondary: #d1d5db;
+      --shadow-primary: rgba(0, 0, 0, 0.1);
+      --shadow-secondary: rgba(0, 0, 0, 0.05);
+      --purple-50: #faf5ff;
+      --purple-100: #f3e8ff;
+      --purple-600: #9333ea;
+      --purple-700: #7c3aed;
+      --purple-800: #6b21a8;
+    }
+
+    .dark {
+      /* Tema oscuro */
+      --bg-primary: #111827;
+      --bg-secondary: #1f2937;
+      --bg-tertiary: #374151;
+      --text-primary: #f9fafb;
+      --text-secondary: #d1d5db;
+      --text-tertiary: #9ca3af;
+      --border-primary: #374151;
+      --border-secondary: #4b5563;
+      --shadow-primary: rgba(0, 0, 0, 0.25);
+      --shadow-secondary: rgba(0, 0, 0, 0.15);
+      --purple-50: #1e1b4b;
+      --purple-100: #312e81;
+      --purple-600: #a855f7;
+      --purple-700: #9333ea;
+      --purple-800: #7c3aed;
+    }
+
+    /* Transiciones suaves para cambio de tema */
+    * {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+
+    /* Clases de utilidad para temas */
+    .bg-theme-primary { background-color: var(--bg-primary); }
+    .bg-theme-secondary { background-color: var(--bg-secondary); }
+    .bg-theme-tertiary { background-color: var(--bg-tertiary); }
+    .text-theme-primary { color: var(--text-primary); }
+    .text-theme-secondary { color: var(--text-secondary); }
+    .text-theme-tertiary { color: var(--text-tertiary); }
+    .border-theme-primary { border-color: var(--border-primary); }
+    .border-theme-secondary { border-color: var(--border-secondary); }
+  </style>
+
   <!-- Tailwind opcional -->
   <link rel="manifest" href="/manifest.json" />
   <link rel="icon" type="image/png" href="https://vvrl.cc/api/image/kq8w7e/view" />
