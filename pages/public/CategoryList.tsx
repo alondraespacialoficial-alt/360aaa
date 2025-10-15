@@ -36,7 +36,7 @@ const CategoryList: React.FC = () => {
       const { data: provs, error: provErr } = await supabase
         .from('providers')
         .select(`
-          id, name, description, website, instagram, facebook,
+          id, name, description, website, instagram, facebook, whatsapp,
           is_active, featured, profile_image_url,
           provider_categories!inner(category_id)
         `)
@@ -49,6 +49,8 @@ const CategoryList: React.FC = () => {
         setError('Error al cargar proveedores.');
         console.error(provErr);
       } else {
+        // Debug temporal para verificar el campo whatsapp
+        console.log('Proveedores cargados:', provs?.map(p => ({id: p.id, name: p.name, whatsapp: p.whatsapp})));
         setSuppliers(provs || []);
       }
       setLoading(false);
@@ -104,14 +106,20 @@ const CategoryList: React.FC = () => {
                   >
                     Ver detalles
                   </Link>
-                  <a
-                    href={`https://wa.me/${sup.contact?.whatsapp ? sup.contact.whatsapp.replace(/\D/g, '') : ''}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full flex items-center gap-2 shadow transition w-full justify-center"
-                  >
-                    Cotizar por WhatsApp
-                  </a>
+                  {sup.whatsapp ? (
+                    <a
+                      href={`https://wa.me/${sup.whatsapp.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full flex items-center gap-2 shadow transition w-full justify-center"
+                    >
+                      Cotizar por WhatsApp
+                    </a>
+                  ) : (
+                    <span className="bg-gray-400 text-white font-bold py-2 px-4 rounded-full flex items-center gap-2 shadow w-full justify-center cursor-not-allowed">
+                      WhatsApp no disponible
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
