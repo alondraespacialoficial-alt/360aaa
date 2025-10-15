@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase, getProviderFullDetail } from '../../services/supabaseClient';
+import FavoriteButton from '../../components/FavoriteButton';
 
 // Componente para el formulario de reseña
 function ReviewForm({ providerId, onNewReview }) {
@@ -150,7 +151,19 @@ export default function SupplierDetail() {
               </div>
             )}
             <div className="bg-white rounded-xl shadow p-6">
-              <h1 className="text-3xl font-bold text-purple-700 mb-2">{supplier.name}</h1>
+              <div className="flex items-start justify-between mb-2">
+                <h1 className="text-3xl font-bold text-purple-700">{supplier.name}</h1>
+                <FavoriteButton 
+                  provider={{
+                    id: supplier.id,
+                    name: supplier.name,
+                    description: supplier.description,
+                    profile_image_url: supplier.profile_image_url,
+                    whatsapp: supplier.whatsapp
+                  }}
+                  size="lg"
+                />
+              </div>
               {supplier.contact_name && (
                 <p className="text-lg text-gray-700 mb-2"><strong>Contacto:</strong> {supplier.contact_name}</p>
               )}

@@ -9,6 +9,7 @@ import LegalNotice from './pages/public/LegalNotice';
 import Blog from './pages/public/Blog';
 import CategoryList from './pages/public/CategoryList';
 import SupplierDetail from './pages/public/SupplierDetail';
+import FavoritesPage from './pages/public/FavoritesPage';
 import PlanesProveedor from './src/pages/proveedores/planes';
 
 // Admin pages and layout
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/embed" element={<HomePanel />} />
             <Route path="/categoria/:slug" element={<CategoryList />} />
             <Route path="/proveedor/:id" element={<SupplierDetail />} />
+            <Route path="/favoritos" element={<FavoritesPage />} />
             <Route path="/proveedores/planes" element={<PlanesProveedor />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/legal" element={<LegalNotice />} />

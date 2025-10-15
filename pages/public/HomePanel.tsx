@@ -25,8 +25,10 @@ import CategoryIcon from '../../components/CategoryIcons';
 import VideoSection from '../../components/VideoSection';
 import ThemeToggle from '../../components/ThemeToggle';
 import { StarIcon } from '@heroicons/react/24/solid';
+import { useFavorites } from '../../hooks/useFavorites';
 
 const HomePanel: React.FC = () => {
+  const { favoritesCount } = useFavorites();
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [showCookies, setShowCookies] = useState(true);
@@ -117,9 +119,17 @@ const HomePanel: React.FC = () => {
         <div className="flex justify-center mb-4">
           <img src="https://vvrl.cc/api/image/kq8w7e/view" alt="Logo Charlitron" className="h-32 w-auto mx-auto" style={{maxWidth: '260px'}} />
         </div>
-        <div className="mb-4 flex justify-center">
+        <div className="mb-4 flex justify-center gap-4">
           <Link to="/blog" className="inline-block px-5 py-2 border border-indigo-600 text-indigo-700 bg-white rounded-lg shadow-sm hover:bg-indigo-50 transition font-semibold">
             🎉 Tips para tus eventos
+          </Link>
+          <Link to="/favoritos" className="inline-block px-5 py-2 border border-pink-600 text-pink-700 bg-white rounded-lg shadow-sm hover:bg-pink-50 transition font-semibold relative">
+            💗 Mis Favoritos
+            {favoritesCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
+                {favoritesCount}
+              </span>
+            )}
           </Link>
         </div>
         {/* Botones de redes sociales (componente reutilizable y responsivo) */}

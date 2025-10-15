@@ -4,6 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 import type { Supplier, Category } from '../../types';
 import { ChevronLeftIcon } from '../../components/icons';
+import FavoriteButton from '../../components/FavoriteButton';
 
 const CategoryList: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -92,6 +93,19 @@ const CategoryList: React.FC = () => {
                     <span className="text-lg">★</span> DESTACADO
                   </div>
                 )}
+                {/* Botón de favorito en la esquina superior izquierda */}
+                <div className="absolute top-2 left-2">
+                  <FavoriteButton 
+                    provider={{
+                      id: sup.id,
+                      name: sup.name,
+                      description: sup.description,
+                      profile_image_url: sup.profile_image_url,
+                      whatsapp: sup.whatsapp
+                    }}
+                    size="md"
+                  />
+                </div>
               </div>
               <div className="p-4 flex-1 flex flex-col justify-between">
                 <h3 className="text-xl font-bold text-gray-800 mb-2 flex items-center">
