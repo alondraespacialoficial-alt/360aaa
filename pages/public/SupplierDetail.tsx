@@ -126,8 +126,21 @@ export default function SupplierDetail() {
     <div className="max-w-7xl mx-auto font-sans bg-white">
       {/* Modal de imagen grande */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50" onClick={() => setShowModal(false)}>
-          <img src={modalImg} alt="Imagen grande" className="max-w-full max-h-[80vh] rounded-xl shadow-2xl border-4 border-white" />
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
+          <div className="relative max-w-full max-h-full">
+            <img 
+              src={modalImg} 
+              alt="Imagen ampliada" 
+              className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl" 
+            />
+            <button 
+              onClick={() => setShowModal(false)}
+              className="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-70 transition"
+              aria-label="Cerrar imagen"
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
       {/* Información del proveedor */}
@@ -139,20 +152,31 @@ export default function SupplierDetail() {
           >
             ← Regresar
           </button>
-          {/* Imágenes principales del proveedor */}
-          <div className="mb-4">
+          
+          {/* Galería principal de imágenes */}
+          <div className="mb-6">
             {supplier.media && supplier.media.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-                {supplier.media.slice(0, 5).map((img) => (
-                  <div key={img.id} className="flex items-center justify-center bg-white rounded-xl border-2 border-purple-200 shadow-md overflow-hidden" style={{height: '180px'}}>
-                    <img src={img.url} alt={img.kind} style={{maxWidth: '100%', maxHeight: '100%', objectFit: 'contain'}} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                {supplier.media.map((img, index) => (
+                  <div 
+                    key={img.id} 
+                    className="aspect-square bg-white rounded-xl border-2 border-purple-200 shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105" 
+                    onClick={() => { setModalImg(img.url); setShowModal(true); }}
+                    title="Haz clic para ver en grande"
+                  >
+                    <img 
+                      src={img.url} 
+                      alt={`Imagen ${index + 1} de ${supplier.name}`} 
+                      className="w-full h-full object-cover" 
+                    />
                   </div>
                 ))}
               </div>
             )}
-            <div className="bg-white rounded-xl shadow p-6">
-              <div className="flex items-start justify-between mb-2">
-                <h1 className="text-3xl font-bold text-purple-700">{supplier.name}</h1>
+            
+            <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+                <h1 className="text-2xl md:text-3xl font-bold text-purple-700">{supplier.name}</h1>
                 <FavoriteButton 
                   provider={{
                     id: supplier.id,
@@ -229,7 +253,7 @@ export default function SupplierDetail() {
               </div>
             </div>
           </div>
-          {/* Imagen de portada con click para modal */}
+          {/* Imagen de portada opcional (solo si existe) */}
           {supplier.cover_image && (
             <img
               src={supplier.cover_image}
@@ -238,14 +262,6 @@ export default function SupplierDetail() {
               onClick={() => { setModalImg(supplier.cover_image); setShowModal(true); }}
               title="Haz clic para ver en grande"
             />
-          )}
-          {/* Imágenes adicionales */}
-          {supplier.media && supplier.media.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-              {supplier.media.map((img) => (
-                <img key={img.id} src={img.url} alt={img.kind} className="w-full h-32 object-cover rounded-lg border-2 border-purple-100" />
-              ))}
-            </div>
           )}
         </div>
       )}
