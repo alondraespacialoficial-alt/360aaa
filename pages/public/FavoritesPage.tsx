@@ -61,7 +61,7 @@ const FavoritesPage: React.FC = () => {
             Explora proveedores y agrégalos a favoritos haciendo clic en el corazón
           </p>
           <Link
-            to="/embed"
+            to="/"
             className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition"
           >
             Explorar Proveedores

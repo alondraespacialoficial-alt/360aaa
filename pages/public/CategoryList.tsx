@@ -106,7 +106,7 @@ const CategoryList: React.FC = () => {
       <SEOHead {...seoData} />
       
       <header className="mb-8 flex items-center">
-        <button onClick={() => navigate('/embed')} className="mr-4 p-2 rounded-full hover:bg-gray-200 transition">
+        <button onClick={() => navigate('/')} className="mr-4 p-2 rounded-full hover:bg-gray-200 transition">
           <ChevronLeftIcon className="h-6 w-6 text-gray-600" />
         </button>
         <div>

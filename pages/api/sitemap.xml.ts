@@ -36,7 +36,7 @@ export default async function handler(req: any, res: any) {
     // Páginas estáticas principales
     urls.push(
       {
-        loc: `${baseUrl}/embed`,
+        loc: `${baseUrl}/`,
         lastmod: currentDate,
         changefreq: 'daily',
         priority: 1.0

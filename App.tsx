@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -28,7 +28,7 @@ export default function App() {
           <BrowserRouter>
           <Routes>
             {/* Public Routes */}
-            <Route path="/embed" element={<HomePanel />} />
+            <Route path="/embed" element={<Navigate to="/" replace />} />
             <Route path="/categoria/:slug" element={<CategoryList />} />
             <Route path="/proveedor/:id" element={<SupplierDetail />} />
             <Route path="/favoritos" element={<FavoritesPage />} />

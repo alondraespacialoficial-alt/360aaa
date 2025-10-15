@@ -12,7 +12,7 @@ User-agent: *
 Allow: /
 
 # Permitir acceso a todas las páginas públicas
-Allow: /embed
+Allow: /
 Allow: /categoria/
 Allow: /proveedor/
 Allow: /legal

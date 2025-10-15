@@ -2,7 +2,7 @@
   "name": "Charlitron Eventos 360 - Directorio de Proveedores México",
   "short_name": "Charlitron360",
   "description": "�🇽 Encuentra los mejores proveedores para tu evento en México. Especialistas en San Luis Potosí y toda la República Mexicana. Cotiza por WhatsApp.",
-  "start_url": "/embed",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
@@ -42,13 +42,13 @@
   ],
   "shortcuts": [
     {
-      "name": "Ver Categorías",
-      "url": "/embed",
+      "name": "Ver Categorías", 
+      "url": "/",
       "description": "Explorar categorías de proveedores"
     },
     {
       "name": "Mis Favoritos",
-      "url": "/embed#favoritos",
+      "url": "/favoritos",
       "description": "Ver proveedores guardados"
     }
   ]
