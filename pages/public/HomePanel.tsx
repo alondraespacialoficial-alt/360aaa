@@ -26,6 +26,8 @@ import VideoSection from '../../components/VideoSection';
 import ThemeToggle from '../../components/ThemeToggle';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { useFavorites } from '../../hooks/useFavorites';
+import FilterPanel from '../../components/FilterPanel';
+import { useFilters } from '../../hooks/useFilters';
 
 const HomePanel: React.FC = () => {
   const { favoritesCount } = useFavorites();
@@ -37,6 +39,16 @@ const HomePanel: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [city, setCity] = useState("");
+
+  // Hook de filtros para proveedores
+  const {
+    filters,
+    filteredProviders,
+    availableCities,
+    filterStats,
+    handleFilterChange,
+    clearFilters
+  } = useFilters(suppliers);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,10 +65,14 @@ const HomePanel: React.FC = () => {
       } else {
         setCategories(catData || []);
       }
-      // Proveedores
+      // Proveedores con más campos para filtros
       const { data: provData, error: provError } = await supabase
-  .from('providers')
-  .select('id, name, description, profile_image_url, featured, is_active, city, state')
+        .from('providers')
+        .select(`
+          id, name, description, profile_image_url, featured, is_active, 
+          city, state, is_premium, whatsapp,
+          provider_services(id, name, description, price)
+        `)
         .eq('is_active', true)
         .order('featured', { ascending: false })
         .order('name', { ascending: true });
@@ -64,22 +80,21 @@ const HomePanel: React.FC = () => {
         setError('Error al cargar proveedores.');
         console.error(provError);
       } else {
-        setSuppliers(provData || []);
-        // Obtener servicios de todos los proveedores
+        // Mapear proveedores con servicios para los filtros
+        const providersWithServices = provData?.map(provider => ({
+          ...provider,
+          services: provider.provider_services || []
+        })) || [];
+        
+        setSuppliers(providersWithServices);
+        
+        // Crear mapa de servicios por proveedor (para compatibilidad)
         if (provData && provData.length > 0) {
-          const providerIds = provData.map((p: any) => p.id);
-          const { data: servData, error: servError } = await supabase
-            .from('provider_services')
-            .select('id, provider_id, name, description')
-            .in('provider_id', providerIds);
-          if (!servError && servData) {
-            const map: Record<string, any[]> = {};
-            servData.forEach(s => {
-              if (!map[s.provider_id]) map[s.provider_id] = [];
-              map[s.provider_id].push(s);
-            });
-            setServicesByProvider(map);
-          }
+          const map: Record<string, any[]> = {};
+          provData.forEach(p => {
+            map[p.id] = p.provider_services || [];
+          });
+          setServicesByProvider(map);
         }
       }
       setLoading(false);
@@ -163,27 +178,7 @@ const HomePanel: React.FC = () => {
           </Link>
         </div>
       </header>
-      <div className="mb-8 flex flex-col md:flex-row gap-4 items-center relative">
-        <div className="relative w-full md:w-2/3">
-          <input 
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar proveedor por nombre o servicio..."
-            className="w-full p-4 pl-12 bg-theme-primary border border-theme-primary text-theme-primary rounded-full shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
-          />
-          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400" />
-        </div>
-        <div className="w-full md:w-1/3">
-          <input
-            type="text"
-            value={city}
-            onChange={e => setCity(e.target.value)}
-            placeholder="Filtrar por ciudad..."
-            className="w-full p-4 bg-theme-primary border border-theme-primary text-theme-primary rounded-full shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
-          />
-        </div>
-      </div>
+      
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div>
@@ -211,28 +206,22 @@ const HomePanel: React.FC = () => {
               ))}
             </div>
           </div>
+          
+          {/* Panel de filtros para proveedores */}
+          <FilterPanel
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={clearFilters}
+            availableCities={availableCities}
+            resultsCount={filteredProviders.length}
+            className="mb-6"
+          />
+          
           {/* Proveedores filtrados */}
           <div className="transition-all duration-700 ease-out" id="proveedores">
             <h2 className="text-xl font-bold mb-2 text-theme-primary">Proveedores</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {[...suppliers.filter(s => s.featured), ...suppliers.filter(s => !s.featured)]
-                .filter(sup => {
-                  const term = search.toLowerCase();
-                  const cityTerm = city.toLowerCase();
-                  // Buscar en nombre, descripción, servicios, ciudad y estado
-                  const matchName = sup.name.toLowerCase().includes(term);
-                  const matchDesc = sup.description && sup.description.toLowerCase().includes(term);
-                  const matchService = servicesByProvider[sup.id]?.some(serv =>
-                    serv.name.toLowerCase().includes(term) ||
-                    (serv.description && serv.description.toLowerCase().includes(term))
-                  );
-                  const matchCity = sup.city && sup.city.toLowerCase().includes(cityTerm);
-                  const matchState = sup.state && sup.state.toLowerCase().includes(cityTerm);
-                  // Si no hay filtro de ciudad/estado, ignora
-                  const cityFilter = cityTerm === '' || matchCity || matchState;
-                  return (term === '' || matchName || matchDesc || matchService) && cityFilter;
-                })
-                .map(sup => (
+              {filteredProviders.map(sup => (
                   <Link 
                     to={`/proveedor/${sup.id}`}
                     key={sup.id}

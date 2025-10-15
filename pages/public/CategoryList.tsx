@@ -5,6 +5,8 @@ import { supabase } from '../../services/supabaseClient';
 import type { Supplier, Category } from '../../types';
 import { ChevronLeftIcon } from '../../components/icons';
 import FavoriteButton from '../../components/FavoriteButton';
+import FilterPanel from '../../components/FilterPanel';
+import { useFilters } from '../../hooks/useFilters';
 
 const CategoryList: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -13,6 +15,16 @@ const CategoryList: React.FC = () => {
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Hook de filtros
+  const {
+    filters,
+    filteredProviders,
+    availableCities,
+    filterStats,
+    handleFilterChange,
+    clearFilters
+  } = useFilters(suppliers);
 
   useEffect(() => {
     const fetchSuppliers = async () => {
@@ -38,8 +50,9 @@ const CategoryList: React.FC = () => {
         .from('providers')
         .select(`
           id, name, description, website, instagram, facebook, whatsapp,
-          is_active, featured, profile_image_url,
-          provider_categories!inner(category_id)
+          city, is_premium, featured, profile_image_url,
+          provider_categories!inner(category_id),
+          provider_services(id, name, description, price)
         `)
         .eq('provider_categories.category_id', catData.id)
         .eq('is_active', true)
@@ -50,9 +63,13 @@ const CategoryList: React.FC = () => {
         setError('Error al cargar proveedores.');
         console.error(provErr);
       } else {
-        // Debug temporal para verificar el campo whatsapp
-        console.log('Proveedores cargados:', provs?.map(p => ({id: p.id, name: p.name, whatsapp: p.whatsapp})));
-        setSuppliers(provs || []);
+        // Mapear proveedores con servicios para los filtros
+        const providersWithServices = provs?.map(provider => ({
+          ...provider,
+          services: provider.provider_services || []
+        })) || [];
+        
+        setSuppliers(providersWithServices);
       }
       setLoading(false);
     };
@@ -79,8 +96,18 @@ const CategoryList: React.FC = () => {
       ) : error ? (
         <p className="text-center text-red-500">{error}</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {suppliers.map(sup => (
+        <>
+          {/* Panel de filtros */}
+          <FilterPanel
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={clearFilters}
+            availableCities={availableCities}
+            resultsCount={filteredProviders.length}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProviders.map(sup => (
             <div key={sup.id} className="group bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col">
               <div className="relative">
                 <img 
@@ -138,7 +165,8 @@ const CategoryList: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
