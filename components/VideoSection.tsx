@@ -95,16 +95,86 @@ const VideoSection: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full h-96 bg-gray-100 animate-pulse rounded-lg mb-8">
+      <div className="w-full h-96 bg-gradient-to-br from-purple-100 to-pink-100 animate-pulse rounded-2xl mb-8 shadow-xl">
         <div className="flex items-center justify-center h-full">
-          <div className="text-gray-500">Cargando video...</div>
+          <div className="text-center">
+            <div className="text-4xl mb-4">🎬</div>
+            <div className="text-gray-600 font-semibold">Cargando video...</div>
+          </div>
         </div>
       </div>
     );
   }
 
   if (!video) {
-    return null; // No mostrar nada si no hay video activo
+    // Sección de video fallback ESPECTACULAR cuando no hay video
+    return (
+      <section className="mb-12">
+        <div className="max-w-4xl mx-auto">
+          <div className="relative bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 rounded-3xl overflow-hidden shadow-2xl">
+            {/* Fondo con patrón */}
+            <div className="absolute inset-0 bg-black/30"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10"></div>
+            
+            <div className="relative z-10 flex flex-col items-center justify-center h-80 md:h-96 text-white text-center p-8">
+              {/* Icono animado */}
+              <div className="mb-6 animate-bounce">
+                <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                  <span className="text-4xl">🎥</span>
+                </div>
+              </div>
+              
+              {/* Contenido */}
+              <h3 className="text-2xl md:text-3xl font-bold mb-4">
+                ¡Descubre Charlitron Eventos 360!
+              </h3>
+              <p className="text-lg md:text-xl text-white/90 mb-6 max-w-2xl">
+                La plataforma líder en México para encontrar proveedores de eventos verificados. 
+                Cotiza al instante y crea experiencias inolvidables.
+              </p>
+              
+              {/* Características destacadas */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl text-sm">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <div className="text-2xl mb-2">✅</div>
+                  <div className="font-semibold">Proveedores Verificados</div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <div className="text-2xl mb-2">📱</div>
+                  <div className="font-semibold">WhatsApp Directo</div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                  <div className="text-2xl mb-2">🇲🇽</div>
+                  <div className="font-semibold">Cobertura Nacional</div>
+                </div>
+              </div>
+              
+              {/* Call to action */}
+              <div className="mt-8">
+                <a
+                  href="#categorias"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-white text-purple-600 font-bold rounded-2xl hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                >
+                  <span>🚀</span>
+                  Explorar Proveedores
+                </a>
+              </div>
+            </div>
+            
+            {/* Efectos decorativos */}
+            <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+            <div className="absolute bottom-10 right-10 w-24 h-24 bg-pink-300/20 rounded-full blur-xl"></div>
+          </div>
+          
+          {/* Indicador */}
+          <div className="text-center mt-6">
+            <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800">
+              🎬 Sección de Video Promocional
+            </span>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   const videoUrl = getVideoUrl(video);
