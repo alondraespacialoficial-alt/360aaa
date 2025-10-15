@@ -1,6 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-// Aviso legal básico al pie de la página
+import { Link } from 'react-router-dom';
+import { supabase } from '../../services/supabaseClient';
+import type { Category } from '../../types';
+import { SearchIcon } from '../../components/icons';
+import SocialButtons from '../../components/SocialButtons';
+import { CHARLITRON_FACEBOOK_URL, CHARLITRON_INSTAGRAM_URL } from '../../env';
+import SEOHead from '../../components/SEOHead';
 const LegalNotice = () => (
   <div style={{ marginTop: '2rem', padding: '1rem', fontSize: '0.9rem', color: '#555', background: '#f9f9f9', borderRadius: '8px' }}>
     <strong>Aviso de Privacidad y Legal – Charlitron® Eventos 360 Directorio de Proveedores</strong><br /><br />
@@ -12,12 +18,7 @@ const LegalNotice = () => (
     <em>Última actualización: 12 de octubre de 2025</em>
   </div>
 );
-import { Link } from 'react-router-dom';
-import { supabase } from '../../services/supabaseClient';
-import type { Category } from '../../types';
-import { SearchIcon } from '../../components/icons';
-import SocialButtons from '../../components/SocialButtons';
-import { CHARLITRON_FACEBOOK_URL, CHARLITRON_INSTAGRAM_URL } from '../../env';
+
 import Hero from '../../src/components/Hero';
 import ValueProps from '../../src/components/ValueProps';
 import FeaturedStrip from '../../src/components/FeaturedStrip';
@@ -109,6 +110,9 @@ const HomePanel: React.FC = () => {
 
   return (
   <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans bg-theme-primary min-h-screen">
+      {/* SEO dinámico para página principal */}
+      <SEOHead />
+      
       {/* Theme Toggle - Posición fija superior derecha */}
       <div className="fixed top-4 right-4 z-50">
         <ThemeToggle size="md" />

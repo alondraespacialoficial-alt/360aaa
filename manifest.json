@@ -1,21 +1,55 @@
 {
-  "name": "Charlitron Eventos 360 Panel",
+  "name": "Charlitron Eventos 360 - Directorio de Proveedores México",
   "short_name": "Charlitron360",
-  "description": "Directorio de proveedores verificados para eventos.",
-  "start_url": ".",
+  "description": "�🇽 Encuentra los mejores proveedores para tu evento en México. Especialistas en San Luis Potosí y toda la República Mexicana. Cotiza por WhatsApp.",
+  "start_url": "/embed",
   "display": "standalone",
-  "background_color": "#fff",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
   "theme_color": "#7c3aed",
+  "scope": "/",
+  "lang": "es",
+  "categories": ["business", "lifestyle", "social"],
   "icons": [
     {
-      "src": "https://vvrl.cc/api/image/kq8w7e/view",
+      "src": "/logo-charlitron.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable any"
     },
     {
-      "src": "https://vvrl.cc/api/image/kq8w7e/view",
+      "src": "/logo-charlitron.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Vista de escritorio del directorio"
+    },
+    {
+      "src": "/screenshot-mobile.png", 
+      "sizes": "400x800",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Vista móvil del directorio"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ver Categorías",
+      "url": "/embed",
+      "description": "Explorar categorías de proveedores"
+    },
+    {
+      "name": "Mis Favoritos",
+      "url": "/embed#favoritos",
+      "description": "Ver proveedores guardados"
     }
   ]
 }

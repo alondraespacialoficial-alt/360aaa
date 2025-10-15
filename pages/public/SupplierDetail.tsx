@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase, getProviderFullDetail } from '../../services/supabaseClient';
 import FavoriteButton from '../../components/FavoriteButton';
+import SEOHead from '../../components/SEOHead';
 
 // Componente para el formulario de reseña
 function ReviewForm({ providerId, onNewReview }) {
@@ -118,12 +119,47 @@ export default function SupplierDetail() {
     return `https://wa.me/${whatsNumber}?text=${encodeURIComponent(lines.join('\n'))}`;
   };
 
+  // SEO dinámico para proveedores
+  const seoData = useMemo(() => {
+    if (!supplier) return {};
+
+    const title = `${supplier.name} - ${supplier.description || 'Proveedor de Eventos'} | Charlitron Eventos 360`;
+    const description = supplier.description || `Conoce a ${supplier.name}, proveedor especializado en eventos en México. Cotiza servicios y contacta directamente por WhatsApp.`;
+    const keywords = `${supplier.name}, proveedor eventos México, ${supplier.city || 'San Luis Potosí'}, servicios eventos México, cotizar${supplier.services?.length ? ', ' + supplier.services.map(s => s.name).join(', ') : ''}`;
+    
+    return {
+      title,
+      description: description.length > 160 ? description.substring(0, 157) + '...' : description,
+      keywords,
+      image: supplier.profile_image_url || supplier.cover_image || '/logo-charlitron.png',
+      type: 'business.business' as const,
+      providerData: {
+        name: supplier.name,
+        description: supplier.description || '',
+        address: supplier.address,
+        city: supplier.city,
+        state: supplier.state,
+        phone: supplier.phone,
+        rating: supplier.rating_average,
+        reviewCount: reviews.length,
+        services: supplier.services?.map(s => ({
+          name: s.name,
+          price: s.price || 0,
+          description: s.description || ''
+        })) || []
+      }
+    };
+  }, [supplier, reviews]);
+
   if (loading) {
     return <div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div></div>;
   }
 
   return (
     <div className="max-w-7xl mx-auto font-sans bg-white">
+      {/* SEO dinámico */}
+      <SEOHead {...seoData} />
+      
       {/* Modal de imagen grande */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabaseClient';
 import type { Supplier, Category } from '../../types';
@@ -7,6 +7,7 @@ import { ChevronLeftIcon } from '../../components/icons';
 import FavoriteButton from '../../components/FavoriteButton';
 import FilterPanel from '../../components/FilterPanel';
 import { useFilters } from '../../hooks/useFilters';
+import SEOHead from '../../components/SEOHead';
 
 const CategoryList: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -77,8 +78,33 @@ const CategoryList: React.FC = () => {
     fetchSuppliers();
   }, [slug]);
 
+  // SEO dinámico para categorías
+  const seoData = useMemo(() => {
+    if (!category) return {};
+
+    const title = `${category.name} - Proveedores para Eventos en México | Charlitron Eventos 360`;
+    const description = category.description || `Encuentra los mejores proveedores de ${category.name.toLowerCase()} para tu evento en México. Especialistas en San Luis Potosí y toda la República Mexicana. Compara precios y contacta por WhatsApp.`;
+    const keywords = `${category.name} México, proveedores eventos México, servicios ${category.name.toLowerCase()}, cotizar, San Luis Potosí, República Mexicana`;
+    
+    return {
+      title,
+      description: description.length > 160 ? description.substring(0, 157) + '...' : description,
+      keywords,
+      image: '/logo-charlitron.png',
+      type: 'website' as const,
+      categoryData: {
+        name: category.name,
+        description: category.description || `Servicios de ${category.name}`,
+        providerCount: filteredProviders.length
+      }
+    };
+  }, [category, filteredProviders]);
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto font-sans">
+      {/* SEO dinámico */}
+      <SEOHead {...seoData} />
+      
       <header className="mb-8 flex items-center">
         <button onClick={() => navigate('/embed')} className="mr-4 p-2 rounded-full hover:bg-gray-200 transition">
           <ChevronLeftIcon className="h-6 w-6 text-gray-600" />
