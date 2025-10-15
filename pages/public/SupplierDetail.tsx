@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../../services/supabaseClient';
+import { supabase, getProviderFullDetail } from '../../services/supabaseClient';
 
 // Componente para el formulario de reseña
 function ReviewForm({ providerId, onNewReview }) {
@@ -69,35 +69,23 @@ export default function SupplierDetail() {
   useEffect(() => {
     async function fetchDetails() {
       setLoading(true);
-      // Traer proveedor desde providers
-      const { data: providerData } = await supabase
-        .from('providers')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      // Traer servicios relacionados desde provider_services
-      const { data: servicesData } = await supabase
-        .from('provider_services')
-        .select('*')
-        .eq('provider_id', id);
-
-      // Traer imágenes adicionales desde provider_media
-      const { data: mediaData } = await supabase
-        .from('provider_media')
-        .select('*')
-        .eq('provider_id', id);
-
-      // Traer reseñas
-      const { data: reviewsData } = await supabase
-        .from('provider_reviews')
-        .select('*')
-        .eq('provider_id', id)
-        .order('created_at', { ascending: false });
-
-      // Unir servicios e imágenes al proveedor
-      setSupplier(providerData ? { ...providerData, services: servicesData || [], media: mediaData || [] } : null);
-      setReviews(reviewsData || []);
+      
+      // Usar la función optimizada del cliente Supabase
+      const result = await getProviderFullDetail(id);
+      
+      if (result.provider) {
+        // Unir servicios e imágenes al proveedor
+        setSupplier({
+          ...result.provider,
+          services: result.services || [],
+          media: result.media || []
+        });
+        setReviews(result.reviews || []);
+      } else {
+        setSupplier(null);
+        setReviews([]);
+      }
+      
       setLoading(false);
     }
     fetchDetails();
@@ -116,8 +104,8 @@ export default function SupplierDetail() {
   }, [cart]);
 
   const buildWALink = () => {
-    if (!supplier || !supplier.contact?.whatsapp) return '#';
-    const whatsNumber = supplier.contact.whatsapp.replace(/\D/g, '');
+    if (!supplier || !supplier.whatsapp) return '#';
+    const whatsNumber = supplier.whatsapp.replace(/\D/g, '');
     const lines = [
       'Hola, vimos tu anuncio en Charlitron Eventos 360.',
       `Proveedor: ${supplier.name}`,
@@ -163,40 +151,68 @@ export default function SupplierDetail() {
             )}
             <div className="bg-white rounded-xl shadow p-6">
               <h1 className="text-3xl font-bold text-purple-700 mb-2">{supplier.name}</h1>
+              {supplier.contact_name && (
+                <p className="text-lg text-gray-700 mb-2"><strong>Contacto:</strong> {supplier.contact_name}</p>
+              )}
               <p className="text-gray-600 mb-2">{supplier.description}</p>
-              <p className="text-gray-500 mb-4">{supplier.address}{supplier.city ? `, ${supplier.city}` : ''}{supplier.state ? `, ${supplier.state}` : ''}</p>
+              
+              {/* Dirección - Detectar si es un enlace o dirección normal */}
+              <div className="text-gray-500 mb-4">
+                {supplier.address && (
+                  <>
+                    {supplier.address.startsWith('http') ? (
+                      <a 
+                        href={supplier.address} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-blue-600 underline hover:text-blue-800 transition inline-flex items-center gap-1"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                        </svg>
+                        Ver ubicación en Google Maps
+                      </a>
+                    ) : (
+                      <span>{supplier.address}</span>
+                    )}
+                    {supplier.city && <span>, {supplier.city}</span>}
+                    {supplier.state && <span>, {supplier.state}</span>}
+                  </>
+                )}
+              </div>
               {/* Contacto en renglones separados */}
               <div className="mt-2 space-y-2">
-                {supplier.contact?.whatsapp && (
-                  <a href={`https://wa.me/${supplier.contact.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 bg-green-600 text-white rounded shadow hover:bg-green-700 transition">
+                {supplier.whatsapp && (
+                  <a href={`https://wa.me/${supplier.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 bg-green-600 text-white rounded shadow hover:bg-green-700 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 13.487a8.25 8.25 0 1 1-3.612-3.612m3.612 3.612c-.306-.153-.612-.306-.918-.459a2.25 2.25 0 0 0-2.835.459c-.459.459-.918.918-1.377 1.377a2.25 2.25 0 0 0 .459 2.835c.153.306.306.612.459.918" /></svg>
-                    WhatsApp: {supplier.contact.whatsapp}
+                    WhatsApp: {supplier.whatsapp}
                   </a>
                 )}
-                {supplier.contact?.email && (
-                  <a href={`mailto:${supplier.contact.email}`} className="text-purple-700 underline block">Email: {supplier.contact.email}</a>
+                {supplier.email && (
+                  <a href={`mailto:${supplier.email}`} className="text-purple-700 underline block">Email: {supplier.email}</a>
                 )}
-                {supplier.contact?.phone && (
-                  <span className="text-blue-700 block">Teléfono: {supplier.contact.phone}</span>
+                {supplier.phone && (
+                  <span className="text-blue-700 block">Teléfono: {supplier.phone}</span>
                 )}
               </div>
               {/* Redes sociales: solo mostrar si existen */}
               <div className="flex flex-row gap-4 mt-4">
-                {supplier.contact?.website && (
-                  <a href={supplier.contact.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Sitio web</a>
+                {supplier.website && (
+                  <a href={supplier.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Sitio web</a>
                 )}
-                {supplier.contact?.instagram && (
-                  <a href={supplier.contact.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-600 underline">Instagram</a>
+                {supplier.instagram_url && (
+                  <a href={supplier.instagram_url} target="_blank" rel="noopener noreferrer" className="text-pink-600 underline">Instagram</a>
                 )}
-                {supplier.contact?.facebook && (
-                  <a href={supplier.contact.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-800 underline">Facebook</a>
+                {supplier.facebook_url && (
+                  <a href={supplier.facebook_url} target="_blank" rel="noopener noreferrer" className="text-blue-800 underline">Facebook</a>
                 )}
               </div>
               <div className="mt-4 text-sm text-gray-500">
-                <span>Premium: {supplier.is_premium ? 'Sí' : 'No'}</span> | <span>Destacado: {supplier.is_featured ? 'Sí' : 'No'}</span>
+                <span>Premium: {supplier.is_premium ? 'Sí' : 'No'}</span> | <span>Destacado: {supplier.featured ? 'Sí' : 'No'}</span>
               </div>
               <div className="mt-2 text-sm text-gray-500">
-                <span>Calificación promedio: {supplier.rating_averag ?? 'N/A'}</span> | <span>Reseñas: {supplier.total_reviews ?? 0}</span>
+                <span>Calificación promedio: {supplier.rating_average ?? 'N/A'}</span> | <span>Reseñas: {reviews.length}</span>
               </div>
             </div>
           </div>
@@ -248,7 +264,7 @@ export default function SupplierDetail() {
             )}
             {cart.length === 0 ? (
               <span className="text-gray-500">Selecciona al menos un servicio para cotizar.</span>
-            ) : supplier.contact?.whatsapp ? (
+            ) : supplier.whatsapp ? (
               <a
                 href={buildWALink()}
                 target="_blank"

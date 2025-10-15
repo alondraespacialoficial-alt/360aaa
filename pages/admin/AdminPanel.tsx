@@ -357,16 +357,19 @@ const ManageSuppliers: React.FC = () => {
         setEditId(supplier.id);
         setEditValues({
             name: supplier.name,
+            contact_name: supplier.contact_name,
             email: supplier.email,
             phone: supplier.phone,
             whatsapp: supplier.whatsapp,
-            facebook_url: supplier.facebook_url,
-            instagram_url: supplier.instagram_url,
-            website_url: supplier.website_url,
-            description: supplier.description,
             address: supplier.address,
             city: supplier.city,
             state: supplier.state,
+            description: supplier.description,
+            website_url: supplier.website,
+            instagram: supplier.instagram,
+            facebook: supplier.facebook,
+            instagram_url: supplier.instagram_url,
+            facebook_url: supplier.facebook_url,
             profile_image: profileImage,
             extra_images: extraImages,
             services: servicesData || [],
@@ -447,12 +450,18 @@ const ManageSuppliers: React.FC = () => {
         const { error } = await supabase.from('providers').update({
             name: editValues.name,
             contact_name: editValues.contact_name,
+            email: editValues.email,
+            phone: editValues.phone,
+            whatsapp: editValues.whatsapp,
+            address: editValues.address,
+            city: editValues.city,
+            state: editValues.state,
             description: editValues.description,
+            website: editValues.website_url,
             instagram: editValues.instagram,
             facebook: editValues.facebook,
             instagram_url: editValues.instagram_url,
             facebook_url: editValues.facebook_url,
-            contact,
         }).eq('id', id);
         // Guardar nuevas imágenes extra
         if (editValues.add_extra_images && editValues.add_extra_images.length > 0) {
