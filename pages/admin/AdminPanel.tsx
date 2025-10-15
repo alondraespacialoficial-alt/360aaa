@@ -231,8 +231,28 @@ const ManageSuppliers: React.FC = () => {
         const fetchData = async () => {
             const { data: catData } = await supabase.from('categories').select('*').order('name');
             setCategories(catData || []);
-            const { data: provData } = await supabase.from('providers').select('*').order('name');
-            setSuppliers(provData || []);
+            
+            // Cargar proveedores con sus servicios relacionados
+            const { data: provData } = await supabase
+                .from('providers')
+                .select(`
+                    *,
+                    provider_services (
+                        id,
+                        name,
+                        description,
+                        price
+                    )
+                `)
+                .order('name');
+            
+            // Mapear para que servicios esté disponible como array
+            const providersWithServices = provData?.map(provider => ({
+                ...provider,
+                services: provider.provider_services || []
+            })) || [];
+            
+            setSuppliers(providersWithServices);
         };
         fetchData();
     }, []);
@@ -297,9 +317,27 @@ const ManageSuppliers: React.FC = () => {
             }
         }
         setName(""); setContactName(""); setEmail(""); setPhone(""); setWhatsapp(""); setAddress(""); setCity(""); setState(""); setDescription(""); setProfileImage(null); setWebsite(""); setInstagram(""); setFacebook(""); setIsActive(true); setIsPremium(false); setFeatured(false); setSelectedCategories([]); setServices([]); setMediaFiles([]); setError(null);
-        // Recargar proveedores
-        const { data: provData2 } = await supabase.from('providers').select('*').order('name');
-        setSuppliers(provData2 || []);
+        
+        // Recargar proveedores con servicios
+        const { data: provData2 } = await supabase
+            .from('providers')
+            .select(`
+                *,
+                provider_services (
+                    id,
+                    name,
+                    description,
+                    price
+                )
+            `)
+            .order('name');
+        
+        const providersWithServices = provData2?.map(provider => ({
+            ...provider,
+            services: provider.provider_services || []
+        })) || [];
+        
+        setSuppliers(providersWithServices);
     };
 
     // Iniciar edición de proveedor
@@ -308,6 +346,14 @@ const ManageSuppliers: React.FC = () => {
         const { data: mediaData } = await supabase.from('provider_media').select('*').eq('provider_id', supplier.id);
         const profileImage = mediaData?.find((img: any) => img.kind === 'profile')?.url || supplier.profile_image;
         const extraImages = mediaData?.filter((img: any) => img.kind === 'image').map((img: any) => img.url) || [];
+        
+        // Cargar servicios específicos del proveedor
+        const { data: servicesData } = await supabase
+            .from('provider_services')
+            .select('*')
+            .eq('provider_id', supplier.id)
+            .order('name');
+        
         setEditId(supplier.id);
         setEditValues({
             name: supplier.name,
@@ -323,7 +369,7 @@ const ManageSuppliers: React.FC = () => {
             state: supplier.state,
             profile_image: profileImage,
             extra_images: extraImages,
-            services: supplier.services || [],
+            services: servicesData || [],
         });
     };
 
@@ -433,9 +479,27 @@ const ManageSuppliers: React.FC = () => {
             alert('Proveedor actualizado');
             setEditId(null);
             setEditValues({});
-            // Recargar proveedores
-            const { data: provData2 } = await supabase.from('providers').select('*').order('name');
-            setSuppliers(provData2 || []);
+            
+            // Recargar proveedores con servicios
+            const { data: provData2 } = await supabase
+                .from('providers')
+                .select(`
+                    *,
+                    provider_services (
+                        id,
+                        name,
+                        description,
+                        price
+                    )
+                `)
+                .order('name');
+            
+            const providersWithServices = provData2?.map(provider => ({
+                ...provider,
+                services: provider.provider_services || []
+            })) || [];
+            
+            setSuppliers(providersWithServices);
         } else {
             alert('Error al actualizar: ' + error.message);
         }
@@ -599,7 +663,7 @@ const ManageSuppliers: React.FC = () => {
                                                     <input type="file" accept="image/*" multiple onChange={e => handleEditChange('add_extra_images', Array.from(e.target.files || []).slice(0, 5))} />
                                                 </div>
                                                 <div className="mb-2"><b>Servicios:</b>
-                                                    {s.services && s.services.map((serv: any, idx: number) => (
+                                                    {editValues.services && editValues.services.map((serv: any, idx: number) => (
                                                         <div key={idx} className="flex items-center gap-2 mb-1">
                                                             <input type="text" value={editValues[`service_name_${idx}`] ?? serv.name} onChange={e => handleEditChange(`service_name_${idx}`, e.target.value)} placeholder="Nombre" className="border-b w-1/3" />
                                                             <input type="text" value={editValues[`service_desc_${idx}`] ?? serv.description} onChange={e => handleEditChange(`service_desc_${idx}`, e.target.value)} placeholder="Descripción" className="border-b w-1/3" />
@@ -628,6 +692,18 @@ const ManageSuppliers: React.FC = () => {
                                                 {s.website_url && <div><b>Web:</b> {s.website_url}</div>}
                                                 {s.profile_image && <div><b>Imagen 1:</b> {s.profile_image}</div>}
                                                 {s.cover_image && <div><b>Imagen 2:</b> {s.cover_image}</div>}
+                                                {s.services && s.services.length > 0 && (
+                                                    <div className="mt-2">
+                                                        <b>Servicios:</b>
+                                                        <div className="ml-2">
+                                                            {s.services.map((service: any, idx: number) => (
+                                                                <div key={idx} className="text-sm text-gray-600 mb-1">
+                                                                    • {service.name} - {service.description} - ${service.price}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </>
                                         )}
                                     </div>
