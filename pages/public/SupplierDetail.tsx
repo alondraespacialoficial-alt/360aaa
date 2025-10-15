@@ -268,70 +268,212 @@ export default function SupplierDetail() {
 
       {/* Servicios del proveedor */}
       {supplier?.services && supplier.services.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Servicios</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {supplier.services.map(service => (
-              <div key={service.id} className="p-4 border rounded-lg bg-gray-50 flex justify-between items-center">
-                <div>
-                  <h3 className="font-bold text-lg text-purple-700">{service.name}</h3>
-                  <p className="text-gray-600">{service.description}</p>
-                  <span className="text-gray-800 font-semibold">${service.price}</span>
-                </div>
-                <button onClick={() => toggleCartItem(service)} className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition">
-                  {cart.some(item => item.id === service.id) ? 'Quitar' : 'Agregar'}
-                </button>
-              </div>
-            ))}
-          </div>
-          {/* Cotizador WhatsApp y monto total */}
-          <div className="mt-6">
-            {cart.length > 0 && (
-              <div className="mb-4 text-lg font-semibold text-gray-700">
-                Monto total seleccionado: $ {totalCost.toFixed(2)}
-              </div>
-            )}
-            {cart.length === 0 ? (
-              <span className="text-gray-500">Selecciona al menos un servicio para cotizar.</span>
-            ) : supplier.whatsapp ? (
-              <a
-                href={buildWALink()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-5 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition font-bold"
-              >
-                Cotizar por WhatsApp
-              </a>
-            ) : (
-              <button disabled className="inline-block px-5 py-2 bg-gray-400 text-white rounded font-bold cursor-not-allowed" title="No hay número de WhatsApp disponible">
-                Cotizar por WhatsApp
-              </button>
-            )}
-          </div>
-          {/* Formulario y lista de reseñas */}
-          <div className="mt-10">
-            <h2 className="text-xl font-semibold text-purple-700 mb-4">Reseñas de Proveedores</h2>
-            <ReviewForm providerId={supplier.id} onNewReview={review => setReviews([review, ...reviews])} />
-            <div className="mt-6">
-              {reviews.length === 0 ? (
-                <p className="text-gray-500">No hay reseñas aún.</p>
-              ) : (
-                <ul className="space-y-4">
-                  {reviews.map(r => (
-                    <li key={r.id} className="p-4 bg-white border rounded shadow">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-yellow-500">{'★'.repeat(r.rating)}</span>
-                        <span className="text-gray-700 font-semibold">{r.comment}</span>
+        <div className="mb-8 px-4 md:px-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+            🛍️ Servicios Disponibles
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Lista de servicios */}
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {supplier.services.map(service => {
+                  const isInCart = cart.some(item => item.id === service.id);
+                  const priceCategory = service.price <= 1000 ? 'economico' : service.price <= 5000 ? 'medio' : 'premium';
+                  const colorClasses = {
+                    economico: 'from-green-400 to-green-600 border-green-200',
+                    medio: 'from-yellow-400 to-orange-500 border-yellow-200', 
+                    premium: 'from-purple-500 to-pink-600 border-purple-200'
+                  };
+                  
+                  return (
+                    <div 
+                      key={service.id} 
+                      className={`
+                        relative p-4 rounded-xl border-2 transition-all duration-300 transform hover:scale-105
+                        ${isInCart 
+                          ? `bg-gradient-to-br ${colorClasses[priceCategory]} text-white shadow-lg` 
+                          : 'bg-white border-gray-200 hover:border-purple-300 shadow-md hover:shadow-lg'
+                        }
+                      `}
+                    >
+                      {/* Badge de categoría de precio */}
+                      <div className={`
+                        absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-bold
+                        ${priceCategory === 'economico' ? 'bg-green-500 text-white' : 
+                          priceCategory === 'medio' ? 'bg-yellow-500 text-white' : 
+                          'bg-purple-500 text-white'}
+                      `}>
+                        {priceCategory === 'economico' ? '💚 Económico' : 
+                         priceCategory === 'medio' ? '🧡 Medio' : 
+                         '💜 Premium'}
                       </div>
-                      <div className="text-xs text-gray-400">{r.created_at?.slice(0,10)}</div>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                      
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className={`font-bold text-lg ${isInCart ? 'text-white' : 'text-purple-700'}`}>
+                          {service.name}
+                        </h3>
+                        {isInCart && (
+                          <span className="text-white text-2xl animate-pulse">✓</span>
+                        )}
+                      </div>
+                      
+                      <p className={`mb-3 text-sm ${isInCart ? 'text-white/90' : 'text-gray-600'}`}>
+                        {service.description}
+                      </p>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className={`text-xl font-bold ${isInCart ? 'text-white' : 'text-gray-800'}`}>
+                          ${service.price?.toLocaleString()}
+                        </span>
+                        <button 
+                          onClick={() => toggleCartItem(service)} 
+                          className={`
+                            px-4 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105
+                            ${isInCart 
+                              ? 'bg-white/20 text-white border-2 border-white/50 hover:bg-white/30' 
+                              : 'bg-purple-600 text-white hover:bg-purple-700 shadow-md'
+                            }
+                          `}
+                        >
+                          {isInCart ? '🗑️ Quitar' : '➕ Agregar'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Panel de cotización visual */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-4">
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200 shadow-xl">
+                  <h3 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                    🧮 Tu Cotización
+                  </h3>
+                  
+                  {cart.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="text-4xl mb-3">🛒</div>
+                      <p className="text-gray-500 font-medium">
+                        Selecciona servicios para cotizar
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Lista de servicios seleccionados */}
+                      <div className="space-y-3 mb-6">
+                        {cart.map((item, index) => {
+                          const percentage = ((item.price / totalCost) * 100).toFixed(1);
+                          const priceCategory = item.price <= 1000 ? 'economico' : item.price <= 5000 ? 'medio' : 'premium';
+                          const barColor = {
+                            economico: 'bg-green-500',
+                            medio: 'bg-yellow-500', 
+                            premium: 'bg-purple-500'
+                          };
+                          
+                          return (
+                            <div key={item.id} className="bg-white rounded-lg p-3 shadow-sm border border-purple-100">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="font-semibold text-gray-800 text-sm">
+                                  {item.name}
+                                </span>
+                                <span className="font-bold text-purple-600">
+                                  ${item.price?.toLocaleString()}
+                                </span>
+                              </div>
+                              
+                              {/* Barra de progreso */}
+                              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1">
+                                <div 
+                                  className={`h-2.5 rounded-full transition-all duration-500 ${barColor[priceCategory]}`}
+                                  style={{ width: `${percentage}%` }}
+                                ></div>
+                              </div>
+                              
+                              <div className="text-xs text-gray-500 flex justify-between">
+                                <span>{percentage}% del total</span>
+                                <button 
+                                  onClick={() => toggleCartItem(item)}
+                                  className="text-red-500 hover:text-red-700 font-medium"
+                                >
+                                  ✕ Quitar
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Total destacado */}
+                      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl p-4 text-white mb-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-lg font-semibold">Total:</span>
+                          <span className="text-2xl font-bold">
+                            ${totalCost.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="text-sm opacity-90 mt-1">
+                          {cart.length} servicio{cart.length !== 1 ? 's' : ''} seleccionado{cart.length !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+
+                      {/* Botón de WhatsApp mejorado */}
+                      {supplier.whatsapp ? (
+                        <a
+                          href={buildWALink()}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg text-center"
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-2xl">📱</span>
+                            <div>
+                              <div className="text-lg">Cotizar por WhatsApp</div>
+                              <div className="text-sm opacity-90">Respuesta inmediata</div>
+                            </div>
+                          </div>
+                        </a>
+                      ) : (
+                        <button 
+                          disabled 
+                          className="w-full bg-gray-400 text-white font-bold py-4 px-6 rounded-xl cursor-not-allowed"
+                        >
+                          WhatsApp no disponible
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Formulario y lista de reseñas */}
+      <div className="mt-10 px-4 md:px-6">
+        <h2 className="text-xl font-semibold text-purple-700 mb-4">Reseñas de Proveedores</h2>
+        <ReviewForm providerId={supplier.id} onNewReview={review => setReviews([review, ...reviews])} />
+        <div className="mt-6">
+          {reviews.length === 0 ? (
+            <p className="text-gray-500">No hay reseñas aún.</p>
+          ) : (
+            <ul className="space-y-4">
+              {reviews.map(r => (
+                <li key={r.id} className="p-4 bg-white border rounded shadow">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-yellow-500">{'★'.repeat(r.rating)}</span>
+                    <span className="text-gray-700 font-semibold">{r.comment}</span>
+                  </div>
+                  <div className="text-xs text-gray-400">{r.created_at?.slice(0,10)}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
