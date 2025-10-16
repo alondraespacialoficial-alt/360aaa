@@ -17,6 +17,9 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminPanel from './pages/admin/AdminPanel';
 import BlogAdmin from './pages/admin/BlogAdmin';
 import BlogPostsAdmin from './pages/admin/BlogPostsAdmin';
+import DiagnosticPage from './pages/admin/DiagnosticPage';
+import TestFiltersPage from './pages/admin/TestFiltersPage';
+import SearchTestPage from './pages/admin/SearchTestPage';
 import AdminLayout from './components/layouts/AdminLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -38,6 +41,9 @@ export default function App() {
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/admin/diagnostico" element={<DiagnosticPage />} />
+            <Route path="/admin/test-filtros" element={<TestFiltersPage />} />
+            <Route path="/admin/test-busqueda" element={<SearchTestPage />} />
             <Route element={<AdminLayout />}>
               <Route path="/admin/panel" element={<AdminPanel />} />
               <Route path="/admin/blog" element={<BlogAdmin />} />

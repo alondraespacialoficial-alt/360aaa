@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Filtros - Charlitron Eventos 360</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .filter-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .filter-section h3 {
+            margin: 0 0 10px 0;
+            color: #7c3aed;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        .provider-card {
+            background: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .provider-name {
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+        .provider-description {
+            color: #64748b;
+            font-size: 14px;
+        }
+        .stats {
+            background: #e0e7ff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            color: #3730a3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔍 Test de Funcionalidad de Filtros</h1>
+        <p>Esta página permite probar la funcionalidad de filtros de manera independiente.</p>
+        
+        <div class="stats" id="stats">
+            Total: 0 proveedores | Filtrados: 0 proveedores
+        </div>
+
+        <div class="filter-section">
+            <h3>🔎 Búsqueda por Texto</h3>
+            <input type="text" id="searchInput" placeholder="Buscar por nombre o descripción...">
+        </div>
+
+        <div class="filter-section">
+            <h3>📍 Filtro por Ciudad</h3>
+            <select id="cityFilter">
+                <option value="">Todas las ciudades</option>
+            </select>
+        </div>
+
+        <div class="filter-section">
+            <h3>💰 Filtro por Rango de Precio</h3>
+            <select id="priceFilter">
+                <option value="">Todos los precios</option>
+                <option value="0-1000">Económico ($0 - $1,000)</option>
+                <option value="1000-5000">Medio ($1,000 - $5,000)</option>
+                <option value="5000+">Premium ($5,000+)</option>
+            </select>
+        </div>
+
+        <div class="filter-section">
+            <h3>⭐ Filtro por Tipo</h3>
+            <select id="premiumFilter">
+                <option value="">Todos los tipos</option>
+                <option value="true">Solo Premium</option>
+                <option value="false">Solo Estándar</option>
+            </select>
+        </div>
+
+        <div class="filter-section">
+            <h3>🌟 Filtro por Destacado</h3>
+            <select id="featuredFilter">
+                <option value="">Todos</option>
+                <option value="true">Solo Destacados</option>
+                <option value="false">Solo Regulares</option>
+            </select>
+        </div>
+
+        <div class="results">
+            <h3>📋 Resultados</h3>
+            <div id="resultsContainer">
+                Cargando proveedores...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos de prueba simulados
+        const mockProviders = [
+            {
+                id: '1',
+                name: 'Fotografía Elite',
+                description: 'Servicios profesionales de fotografía para bodas y eventos especiales',
+                city: 'San Luis Potosí',
+                is_premium: true,
+                featured: true,
+                services: [{ price: 5000 }, { price: 8000 }]
+            },
+            {
+                id: '2',
+                name: 'DJ Party Sound',
+                description: 'Música y sonido para fiestas y celebraciones',
+                city: 'Guadalajara',
+                is_premium: false,
+                featured: false,
+                services: [{ price: 1500 }, { price: 2500 }]
+            },
+            {
+                id: '3',
+                name: 'Catering Deluxe',
+                description: 'Servicios de catering y banquetes para eventos corporativos',
+                city: 'Ciudad de México',
+                is_premium: true,
+                featured: false,
+                services: [{ price: 800 }, { price: 1200 }]
+            },
+            {
+                id: '4',
+                name: 'Decoraciones Mágicas',
+                description: 'Decoración floral y ambientación para bodas',
+                city: 'San Luis Potosí',
+                is_premium: false,
+                featured: true,
+                services: [{ price: 3000 }, { price: 4500 }]
+            },
+            {
+                id: '5',
+                name: 'Video Memories',
+                description: 'Videografía profesional para eventos memorables',
+                city: 'Monterrey',
+                is_premium: true,
+                featured: false,
+                services: [{ price: 6000 }, { price: 9000 }]
+            }
+        ];
+
+        let allProviders = mockProviders;
+        let filteredProviders = [...allProviders];
+
+        // Inicializar filtros
+        function initializeFilters() {
+            // Poblar ciudades únicas
+            const cities = [...new Set(allProviders.map(p => p.city))].sort();
+            const citySelect = document.getElementById('cityFilter');
+            cities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                citySelect.appendChild(option);
+            });
+
+            // Event listeners
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+            document.getElementById('cityFilter').addEventListener('change', applyFilters);
+            document.getElementById('priceFilter').addEventListener('change', applyFilters);
+            document.getElementById('premiumFilter').addEventListener('change', applyFilters);
+            document.getElementById('featuredFilter').addEventListener('change', applyFilters);
+
+            // Mostrar resultados iniciales
+            updateResults();
+        }
+
+        // Función para obtener precio mínimo
+        function getMinPrice(provider) {
+            if (!provider.services || provider.services.length === 0) return 0;
+            return Math.min(...provider.services.map(s => s.price || 0));
+        }
+
+        // Función para verificar rango de precio
+        function matchesPriceRange(provider, range) {
+            if (!range) return true;
+            const minPrice = getMinPrice(provider);
+            
+            switch (range) {
+                case '0-1000':
+                    return minPrice >= 0 && minPrice <= 1000;
+                case '1000-5000':
+                    return minPrice > 1000 && minPrice <= 5000;
+                case '5000+':
+                    return minPrice > 5000;
+                default:
+                    return true;
+            }
+        }
+
+        // Función para verificar búsqueda de texto
+        function matchesSearch(provider, search) {
+            if (!search) return true;
+            const searchLower = search.toLowerCase();
+            const nameMatches = provider.name.toLowerCase().includes(searchLower);
+            const descriptionMatches = provider.description.toLowerCase().includes(searchLower);
+            return nameMatches || descriptionMatches;
+        }
+
+        // Aplicar todos los filtros
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value;
+            const city = document.getElementById('cityFilter').value;
+            const priceRange = document.getElementById('priceFilter').value;
+            const premium = document.getElementById('premiumFilter').value;
+            const featured = document.getElementById('featuredFilter').value;
+
+            filteredProviders = allProviders.filter(provider => {
+                // Filtro por ciudad
+                if (city && provider.city !== city) {
+                    return false;
+                }
+
+                // Filtro por Premium
+                if (premium !== '' && provider.is_premium !== (premium === 'true')) {
+                    return false;
+                }
+
+                // Filtro por Destacado
+                if (featured !== '' && provider.featured !== (featured === 'true')) {
+                    return false;
+                }
+
+                // Filtro por rango de precio
+                if (!matchesPriceRange(provider, priceRange)) {
+                    return false;
+                }
+
+                // Filtro por búsqueda de texto
+                if (!matchesSearch(provider, search)) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            updateResults();
+        }
+
+        // Actualizar resultados
+        function updateResults() {
+            const container = document.getElementById('resultsContainer');
+            const stats = document.getElementById('stats');
+            
+            // Actualizar estadísticas
+            stats.textContent = `Total: ${allProviders.length} proveedores | Filtrados: ${filteredProviders.length} proveedores`;
+            
+            // Mostrar proveedores filtrados
+            if (filteredProviders.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #64748b;">No se encontraron proveedores que coincidan con los filtros.</p>';
+                return;
+            }
+
+            container.innerHTML = filteredProviders.map(provider => `
+                <div class="provider-card">
+                    <div class="provider-name">
+                        ${provider.featured ? '⭐ ' : ''}
+                        ${provider.name}
+                        ${provider.is_premium ? ' 👑' : ''}
+                    </div>
+                    <div class="provider-description">${provider.description}</div>
+                    <div style="margin-top: 8px; font-size: 12px; color: #64748b;">
+                        📍 ${provider.city} | 💰 Desde $${getMinPrice(provider).toLocaleString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Inicializar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', initializeFilters);
+    </script>
+</body>
+</html>

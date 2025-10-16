@@ -17,7 +17,12 @@ interface ProviderWithServices {
   city?: string;
   is_premium?: boolean;
   featured?: boolean;
-  services?: Array<{ price: number }>;
+  services?: Array<{ 
+    id?: string;
+    name?: string; 
+    description?: string; 
+    price: number;
+  }>;
   [key: string]: any;
 }
 
@@ -96,7 +101,25 @@ export const useFilters = (providers: ProviderWithServices[]) => {
     const nameMatches = provider.name?.toLowerCase().includes(searchLower);
     const descriptionMatches = provider.description?.toLowerCase().includes(searchLower);
     
-    return nameMatches || descriptionMatches;
+    // 🔍 NUEVA FUNCIONALIDAD: Buscar también en los servicios del proveedor
+    const servicesMatch = provider.services?.some(service => {
+      const serviceNameMatches = service.name?.toLowerCase().includes(searchLower);
+      const serviceDescriptionMatches = service.description?.toLowerCase().includes(searchLower);
+      return serviceNameMatches || serviceDescriptionMatches;
+    }) || false;
+    
+    // 🐛 Log de depuración (eliminar en producción)
+    if (search.length > 0 && (nameMatches || descriptionMatches || servicesMatch)) {
+      console.log(`✅ Coincidencia encontrada para "${search}" en:`, {
+        provider: provider.name,
+        nameMatches,
+        descriptionMatches,
+        servicesMatch,
+        services: provider.services?.map(s => s.name).join(', ')
+      });
+    }
+    
+    return nameMatches || descriptionMatches || servicesMatch;
   };
 
   // Aplicar todos los filtros
