@@ -332,7 +332,7 @@ const HomePanel: React.FC = () => {
             <div className="text-center mt-6 sm:mt-8 px-4 sm:px-0">
               <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">¿No encuentras lo que buscas?</p>
               <a
-                href="https://api.whatsapp.com/send/?phone=%2B524444237092&text=Hola,%20necesito%20ayuda%20para%20encontrar%20proveedores%20en%20Charlitron%20Eventos%20360&type=phone_number&app_absent=0"
+                href="https://api.whatsapp.com/send/?phone=%2B524444237092&text=🎉%20¡Hola%20Charlitron%20Eventos%20360!%0A%0A✨%20Estoy%20buscando%20proveedores%20para%20mi%20evento%20y%20me%20gustaría%20recibir%20ayuda%20personalizada.%0A%0A📅%20Tipo%20de%20evento:%20[Bodas,%20XV%20años,%20corporativo,%20etc.]%0A📍%20Ubicación:%20[Ciudad,%20estado]%0A👥%20Número%20aproximado%20de%20invitados:%20[Cantidad]%0A%0A💬%20¿Podrían%20ayudarme%20a%20encontrar%20los%20mejores%20proveedores%20disponibles?%0A%0A🙏%20¡Gracias%20por%20su%20apoyo!&type=phone_number&app_absent=0"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-full hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all duration-300 shadow-lg text-sm sm:text-base"

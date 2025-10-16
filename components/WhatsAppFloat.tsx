@@ -15,7 +15,7 @@ const WhatsAppFloat: React.FC = () => {
 
   const handleClick = () => {
     const message = encodeURIComponent(
-      "¡Hola! Me interesa conocer más sobre los servicios de Charlitron Eventos 360. ¿Podrías ayudarme?"
+      "🎉 ¡Hola Charlitron Eventos 360!\n\n✨ Me interesa conocer más sobre sus servicios para eventos.\n\n📅 Estoy organizando: [Tipo de evento]\n📍 Ubicación: [Ciudad, estado]\n👥 Invitados aproximados: [Cantidad]\n\n💬 ¿Podrían brindarme información personalizada?\n\n🙏 ¡Gracias por su atención!"
     );
     const whatsappUrl = `https://api.whatsapp.com/send/?phone=%2B524444237092&text=${message}&type=phone_number&app_absent=0`;
     window.open(whatsappUrl, '_blank');

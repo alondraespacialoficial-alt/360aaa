@@ -109,12 +109,47 @@ export default function SupplierDetail() {
     if (!supplier || !supplier.whatsapp) return '#';
     const whatsNumber = supplier.whatsapp.replace(/\D/g, '');
     const lines = [
-      'Hola, vimos tu anuncio en Charlitron Eventos 360.',
-      `Proveedor: ${supplier.name}`,
-      'Servicios de interés:',
-      ...cart.map(i => `• ${i.name} – $${i.price ? i.price.toFixed(2) : ''}`),
-      '------------------',
-      `Total aproximado: $${totalCost.toFixed(2)}`
+      '🎉 ¡Hola! Vengo desde Charlitron Eventos 360',
+      '',
+      `✨ Proveedor: *${supplier.name}*`,
+      `📍 Ubicación: ${supplier.city || 'México'}`,
+      '',
+      '🛍️ *Servicios de mi interés:*',
+      ...cart.map(i => `   • ${i.name} – $${i.price ? i.price.toFixed(2) : 'Consultar precio'}`),
+      '',
+      '💰 ────────────────────────────',
+      `💵 *Total aproximado: $${totalCost.toFixed(2)} MXN*`,
+      '💰 ────────────────────────────',
+      '',
+      '📞 Me gustaría recibir más información y cotización personalizada.',
+      '⏰ ¿Cuándo podríamos platicar sobre mi evento?',
+      '',
+      '🙏 ¡Gracias por tu tiempo!'
+    ];
+    return `https://wa.me/${whatsNumber}?text=${encodeURIComponent(lines.join('\n'))}`;
+  };
+
+  const buildSimpleWALink = () => {
+    if (!supplier || !supplier.whatsapp) return '#';
+    const whatsNumber = supplier.whatsapp.replace(/\D/g, '');
+    const lines = [
+      '🎉 ¡Hola! Vengo desde Charlitron Eventos 360',
+      '',
+      `✨ Me interesa contactar con: *${supplier.name}*`,
+      `📍 Ubicación: ${supplier.city || 'México'}`,
+      '',
+      '💬 Me gustaría conocer más sobre sus servicios para eventos:',
+      '   • Catálogo de servicios disponibles',
+      '   • Precios y paquetes',
+      '   • Disponibilidad de fechas',
+      '',
+      '📅 Tipo de evento: [Por favor especificar]',
+      '📍 Ubicación del evento: [Ciudad, estado]',
+      '👥 Número aproximado de invitados: [Cantidad]',
+      '',
+      '📞 ¿Podrían brindarme más información?',
+      '',
+      '🙏 ¡Gracias por su atención!'
     ];
     return `https://wa.me/${whatsNumber}?text=${encodeURIComponent(lines.join('\n'))}`;
   };
@@ -257,9 +292,9 @@ export default function SupplierDetail() {
               {/* Contacto en renglones separados */}
               <div className="mt-2 space-y-2">
                 {supplier.whatsapp && (
-                  <a href={`https://wa.me/${supplier.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 bg-green-600 text-white rounded shadow hover:bg-green-700 transition">
+                  <a href={buildSimpleWALink()} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 bg-green-600 text-white rounded shadow hover:bg-green-700 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 13.487a8.25 8.25 0 1 1-3.612-3.612m3.612 3.612c-.306-.153-.612-.306-.918-.459a2.25 2.25 0 0 0-2.835.459c-.459.459-.918.918-1.377 1.377a2.25 2.25 0 0 0 .459 2.835c.153.306.306.612.459.918" /></svg>
-                    WhatsApp: {supplier.whatsapp}
+                    💬 WhatsApp: {supplier.whatsapp}
                   </a>
                 )}
                 {supplier.email && (
