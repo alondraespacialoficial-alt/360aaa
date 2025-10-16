@@ -20,10 +20,74 @@ const StatsSection: React.FC = () => {
     activeCities: 0
   });
   const [loading, setLoading] = useState(true);
+  const [isRealTimeUpdate, setIsRealTimeUpdate] = useState(false);
+
+  // 🚀 Optimización: Debounce para evitar demasiadas consultas
+  const [fetchTimeout, setFetchTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // 🚀 Función optimizada para actualización en tiempo real
+  const debouncedFetchStats = () => {
+    if (fetchTimeout) {
+      clearTimeout(fetchTimeout);
+    }
+    
+    const timeout = setTimeout(() => {
+      setIsRealTimeUpdate(true);
+      fetchStats().finally(() => {
+        setIsRealTimeUpdate(false);
+      });
+    }, 500); // Espera 500ms antes de actualizar
+    
+    setFetchTimeout(timeout);
+  };
 
   useEffect(() => {
     fetchStats();
-  }, []);
+    
+    // 🚀 TIEMPO REAL: Suscripciones para actualización instantánea
+    const providersChannel = supabase
+      .channel('providers_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'providers' },
+        (payload) => {
+          console.log('🔄 Proveedor actualizado en tiempo real:', payload);
+          debouncedFetchStats(); // Usar versión optimizada
+        }
+      )
+      .subscribe();
+
+    const reviewsChannel = supabase
+      .channel('reviews_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'provider_reviews' },
+        (payload) => {
+          console.log('🔄 Reseña actualizada en tiempo real:', payload);
+          debouncedFetchStats(); // Usar versión optimizada
+        }
+      )
+      .subscribe();
+
+    const categoriesChannel = supabase
+      .channel('categories_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'categories' },
+        (payload) => {
+          console.log('🔄 Categoría actualizada en tiempo real:', payload);
+          debouncedFetchStats(); // Usar versión optimizada
+        }
+      )
+      .subscribe();
+
+    // Cleanup: Desconectar cuando el componente se desmonte
+    return () => {
+      if (fetchTimeout) {
+        clearTimeout(fetchTimeout);
+      }
+      providersChannel.unsubscribe();
+      reviewsChannel.unsubscribe();
+      categoriesChannel.unsubscribe();
+    };
+  }, [fetchTimeout]);
 
   const fetchStats = async () => {
     try {
@@ -171,6 +235,12 @@ const StatsSection: React.FC = () => {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full text-purple-800 font-semibold mb-4">
             <span className="text-lg">📊</span>
             Estadísticas en Tiempo Real
+            {isRealTimeUpdate && (
+              <div className="flex items-center gap-1 ml-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-green-600 font-bold">Actualizando...</span>
+              </div>
+            )}
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             Charlitron Eventos 360 en Números
