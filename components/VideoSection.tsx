@@ -95,11 +95,11 @@ const VideoSection: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full h-96 bg-gradient-to-br from-purple-100 to-pink-100 animate-pulse rounded-2xl mb-8 shadow-xl">
+      <div className="w-full h-64 sm:h-80 md:h-96 bg-gradient-to-br from-purple-100 to-pink-100 animate-pulse rounded-xl sm:rounded-2xl mb-6 sm:mb-8 shadow-xl mx-3 sm:mx-0">
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
-            <div className="text-4xl mb-4">🎬</div>
-            <div className="text-gray-600 font-semibold">Cargando video...</div>
+            <div className="text-2xl sm:text-4xl mb-3 sm:mb-4">🎬</div>
+            <div className="text-gray-600 font-semibold text-sm sm:text-base">Cargando video...</div>
           </div>
         </div>
       </div>
@@ -107,44 +107,44 @@ const VideoSection: React.FC = () => {
   }
 
   if (!video) {
-    // Sección de video fallback ESPECTACULAR cuando no hay video
+    // Sección de video fallback ESPECTACULAR cuando no hay video - Móvil optimizado
     return (
-      <section className="mb-12">
+      <section className="mb-8 sm:mb-12 px-3 sm:px-0">
         <div className="max-w-4xl mx-auto">
-          <div className="relative bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="relative bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
             {/* Fondo con patrón */}
             <div className="absolute inset-0 bg-black/30"></div>
             <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10"></div>
             
-            <div className="relative z-10 flex flex-col items-center justify-center h-80 md:h-96 text-white text-center p-8">
-              {/* Icono animado */}
-              <div className="mb-6 animate-bounce">
-                <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                  <span className="text-4xl">🎥</span>
+            <div className="relative z-10 flex flex-col items-center justify-center h-64 sm:h-80 md:h-96 text-white text-center p-4 sm:p-8">
+              {/* Icono animado - Responsive */}
+              <div className="mb-4 sm:mb-6 animate-bounce">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                  <span className="text-3xl sm:text-4xl">🎥</span>
                 </div>
               </div>
               
-              {/* Contenido */}
-              <h3 className="text-2xl md:text-3xl font-bold mb-4">
+              {/* Contenido - Responsive */}
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4">
                 ¡Descubre Charlitron Eventos 360!
               </h3>
-              <p className="text-lg md:text-xl text-white/90 mb-6 max-w-2xl">
+              <p className="text-sm sm:text-lg md:text-xl text-white/90 mb-4 sm:mb-6 max-w-2xl px-2 sm:px-0">
                 La plataforma líder en México para encontrar proveedores de eventos verificados. 
                 Cotiza al instante y crea experiencias inolvidables.
               </p>
               
-              {/* Características destacadas */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl text-sm">
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                  <div className="text-2xl mb-2">✅</div>
+              {/* Características destacadas - Responsive */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full max-w-2xl text-xs sm:text-sm">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2.5 sm:p-3">
+                  <div className="text-xl sm:text-2xl mb-1 sm:mb-2">✅</div>
                   <div className="font-semibold">Proveedores Verificados</div>
                 </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                  <div className="text-2xl mb-2">📱</div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2.5 sm:p-3">
+                  <div className="text-xl sm:text-2xl mb-1 sm:mb-2">📱</div>
                   <div className="font-semibold">WhatsApp Directo</div>
                 </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-                  <div className="text-2xl mb-2">🇲🇽</div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2.5 sm:p-3">
+                  <div className="text-xl sm:text-2xl mb-1 sm:mb-2">🇲🇽</div>
                   <div className="font-semibold">Cobertura Nacional</div>
                 </div>
               </div>
@@ -161,14 +161,14 @@ const VideoSection: React.FC = () => {
               </div>
             </div>
             
-            {/* Efectos decorativos */}
-            <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
-            <div className="absolute bottom-10 right-10 w-24 h-24 bg-pink-300/20 rounded-full blur-xl"></div>
+            {/* Efectos decorativos - Reducidos en móvil */}
+            <div className="absolute top-5 sm:top-10 left-5 sm:left-10 w-16 sm:w-32 h-16 sm:h-32 bg-white/10 rounded-full blur-xl"></div>
+            <div className="absolute bottom-5 sm:bottom-10 right-5 sm:right-10 w-12 sm:w-24 h-12 sm:h-24 bg-pink-300/20 rounded-full blur-xl"></div>
           </div>
           
-          {/* Indicador */}
-          <div className="text-center mt-6">
-            <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800">
+          {/* Indicador - Responsive */}
+          <div className="text-center mt-4 sm:mt-6">
+            <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800">
               🎬 Sección de Video Promocional
             </span>
           </div>
@@ -181,56 +181,59 @@ const VideoSection: React.FC = () => {
   const thumbnailUrl = getThumbnailUrl(video);
 
   return (
-    <section className="w-full mb-12">
-      <div className="container mx-auto px-4">
-        {/* Título del video */}
+    <section className="w-full mb-8 sm:mb-12 px-3 sm:px-0">
+      <div className="container mx-auto px-0 sm:px-4">
+        {/* Título del video - Responsive */}
         {video.title && (
-          <div className="text-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">
+          <div className="text-center mb-4 sm:mb-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 px-4 sm:px-0">
               {video.title}
             </h2>
             {video.description && (
-              <p className="text-gray-600 max-w-2xl mx-auto">
+              <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto px-4 sm:px-0">
                 {video.description}
               </p>
             )}
           </div>
         )}
 
-        {/* Container del video */}
+        {/* Container del video - Responsive */}
         <div className="relative w-full max-w-4xl mx-auto">
-          <div className="relative aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+          <div className="relative aspect-video bg-black rounded-lg sm:rounded-xl overflow-hidden shadow-2xl">
             {video.video_type === 'upload' ? (
-              // Video subido - reproductor HTML5
+              // Video subido - reproductor HTML5 responsive
               <video
                 className="w-full h-full object-cover"
                 controls
                 poster={thumbnailUrl}
                 preload="metadata"
+                playsInline // Importante para móvil
+                controlsList="nodownload" // Evita descarga en móvil
               >
                 <source src={videoUrl} type="video/mp4" />
                 Tu navegador no soporta el elemento video.
               </video>
             ) : (
-              // Videos de YouTube/Vimeo/URL - iframe
+              // Videos de YouTube/Vimeo/URL - iframe responsive
               <iframe
                 className="w-full h-full"
                 src={videoUrl}
                 title={video.title}
                 frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
+                loading="lazy" // Carga diferida para mejor performance móvil
               ></iframe>
             )}
           </div>
 
-          {/* Overlay con información adicional */}
-          <div className="absolute bottom-4 left-4 right-4 bg-gradient-to-t from-black/70 to-transparent rounded-b-lg p-4 text-white opacity-0 hover:opacity-100 transition-opacity duration-300">
+          {/* Overlay con información adicional - Responsive */}
+          <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 bg-gradient-to-t from-black/70 to-transparent rounded-b-lg p-2 sm:p-4 text-white opacity-0 hover:opacity-100 transition-opacity duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-lg">{video.title}</h3>
+                <h3 className="font-semibold text-sm sm:text-lg">{video.title}</h3>
                 {video.description && (
-                  <p className="text-sm text-gray-200 mt-1 line-clamp-2">
+                  <p className="text-xs sm:text-sm text-gray-200 mt-1 line-clamp-2">
                     {video.description}
                   </p>
                 )}
@@ -239,9 +242,9 @@ const VideoSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Indicador de tipo de video */}
-        <div className="text-center mt-4">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+        {/* Indicador de tipo de video - Responsive */}
+        <div className="text-center mt-3 sm:mt-4">
+          <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
             {video.video_type === 'youtube' && '📺 YouTube'}
             {video.video_type === 'vimeo' && '🎬 Vimeo'}
             {video.video_type === 'upload' && '📁 Video Local'}

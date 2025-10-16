@@ -8,6 +8,7 @@ import SocialButtons from '../../components/SocialButtons';
 import { CHARLITRON_FACEBOOK_URL, CHARLITRON_INSTAGRAM_URL } from '../../env';
 import SEOHead from '../../components/SEOHead';
 import StatsSection from '../../components/StatsSection';
+import WhatsAppFloat from '../../components/WhatsAppFloat';
 const LegalNotice = () => (
   <div style={{ marginTop: '2rem', padding: '1rem', fontSize: '0.9rem', color: '#555', background: '#f9f9f9', borderRadius: '8px' }}>
     <strong>Aviso de Privacidad y Legal – Charlitron® Eventos 360 Directorio de Proveedores</strong><br /><br />
@@ -204,18 +205,18 @@ const HomePanel: React.FC = () => {
         <p className="text-center text-red-500">{error}</p>
       ) : (
         <>
-          {/* Categorías DINÁMICAS */}
-          <div className="mb-12 transition-all duration-700 ease-out" id="categorias">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          {/* Categorías DINÁMICAS - Optimizado móvil */}
+          <div className="mb-8 sm:mb-12 transition-all duration-700 ease-out" id="categorias">
+            <div className="text-center mb-6 sm:mb-8 px-4 sm:px-0">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 🎯 Explora por categoría
               </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              <p className="text-sm sm:text-lg text-gray-600 max-w-2xl mx-auto">
                 Encuentra exactamente lo que necesitas para tu evento perfecto
               </p>
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-6 px-3 sm:px-0">
               {categories.filter(c => !!c.slug).map((cat, index) => {
                 // Colores vibrantes por categoría
                 const colorSchemes = [
@@ -237,7 +238,7 @@ const HomePanel: React.FC = () => {
                   <Link 
                     to={`/categoria/${cat.slug}`}
                     key={cat.id}
-                    className={`group relative overflow-hidden rounded-3xl shadow-lg hover:shadow-2xl transform transition-all duration-500 hover:scale-110 hover:-translate-y-2 cursor-pointer`}
+                    className={`group relative overflow-hidden rounded-2xl sm:rounded-3xl shadow-lg hover:shadow-2xl transform transition-all duration-500 hover:scale-105 sm:hover:scale-110 hover:-translate-y-1 sm:hover:-translate-y-2 cursor-pointer`}
                     style={{
                       animationDelay: `${index * 100}ms`
                     }}
@@ -248,22 +249,25 @@ const HomePanel: React.FC = () => {
                     {/* Efectos de brillo */}
                     <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                     
-                    {/* Contenido */}
-                    <div className="relative z-10 flex flex-col items-center justify-center p-6 h-32 md:h-36 text-white">
-                      {/* Ícono con animación */}
-                      <div className="mb-3 transform group-hover:scale-125 group-hover:rotate-12 transition-all duration-300">
-                        <span className="text-3xl md:text-4xl drop-shadow-lg">
+                    {/* Contenido - Responsive */}
+                    <div className="relative z-10 flex flex-col items-center justify-center p-3 sm:p-6 h-28 sm:h-32 md:h-36 text-white">
+                      {/* Ícono con animación - Responsive */}
+                      <div className="mb-2 sm:mb-3 transform group-hover:scale-110 sm:group-hover:scale-125 group-hover:rotate-6 sm:group-hover:rotate-12 transition-all duration-300">
+                        <span className="text-2xl sm:text-3xl md:text-4xl drop-shadow-lg">
                           <CategoryIcon category={cat.name} />
                         </span>
                       </div>
                       
-                      {/* Nombre con efecto */}
-                      <span className="text-center font-bold text-sm md:text-base drop-shadow-md group-hover:drop-shadow-lg transition-all duration-300">
-                        {cat.name}
+                      {/* Nombre con efecto - Responsive */}
+                      <span className="text-center font-bold text-xs sm:text-sm md:text-base drop-shadow-md group-hover:drop-shadow-lg transition-all duration-300 leading-tight">
+                        {cat.name.length > 12 && window.innerWidth < 640 ? 
+                          cat.name.split(' ')[0] : 
+                          cat.name
+                        }
                       </span>
                       
-                      {/* Indicador de proveedores */}
-                      <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      {/* Indicador de proveedores - Responsive */}
+                      <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 bg-white/20 backdrop-blur-sm rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         +{(() => {
                           // Si tenemos conteo real, usarlo
                           if (categoryCounts[cat.id] && categoryCounts[cat.id] > 0) {
@@ -289,24 +293,24 @@ const HomePanel: React.FC = () => {
                       </div>
                       
                       {/* Efecto de pulso en hover */}
-                      <div className="absolute inset-0 rounded-3xl ring-2 ring-white/50 scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300"></div>
+                      <div className="absolute inset-0 rounded-2xl sm:rounded-3xl ring-1 sm:ring-2 ring-white/50 scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300"></div>
                     </div>
                   </Link>
                 );
               })}
             </div>
             
-            {/* Call-to-action adicional */}
-            <div className="text-center mt-8">
-              <p className="text-gray-600 mb-4">¿No encuentras lo que buscas?</p>
+            {/* Call-to-action adicional - Móvil optimizado */}
+            <div className="text-center mt-6 sm:mt-8 px-4 sm:px-0">
+              <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">¿No encuentras lo que buscas?</p>
               <a
                 href="https://api.whatsapp.com/send/?phone=%2B524444237092&text=Hola,%20necesito%20ayuda%20para%20encontrar%20proveedores%20en%20Charlitron%20Eventos%20360&type=phone_number&app_absent=0"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-full hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-full hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition-all duration-300 shadow-lg text-sm sm:text-base"
               >
-                <span>📞</span>
-                Contáctanos por WhatsApp
+                <span className="text-base sm:text-lg">📞</span>
+                <span>Contáctanos por WhatsApp</span>
               </a>
             </div>
           </div>
@@ -370,6 +374,9 @@ const HomePanel: React.FC = () => {
           Aviso de Privacidad y Legal
         </Link>
       </div>
+      
+      {/* WhatsApp flotante */}
+      <WhatsAppFloat />
     </div>
   );
 }

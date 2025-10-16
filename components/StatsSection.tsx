@@ -202,18 +202,18 @@ const StatsSection: React.FC = () => {
 
   if (loading) {
     return (
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-purple-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <div className="h-8 bg-gray-200 rounded-lg w-64 mx-auto mb-4 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-96 mx-auto animate-pulse"></div>
+      <section className="py-12 sm:py-16 bg-gradient-to-br from-gray-50 to-purple-50">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="h-6 sm:h-8 bg-gray-200 rounded-lg w-48 sm:w-64 mx-auto mb-3 sm:mb-4 animate-pulse"></div>
+            <div className="h-3 sm:h-4 bg-gray-200 rounded w-64 sm:w-96 mx-auto animate-pulse"></div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-6">
             {[...Array(6)].map((_, index) => (
-              <div key={index} className="bg-white rounded-2xl p-6 shadow-lg animate-pulse">
-                <div className="w-12 h-12 bg-gray-200 rounded-full mx-auto mb-4"></div>
-                <div className="h-8 bg-gray-200 rounded w-16 mx-auto mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
+              <div key={index} className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg animate-pulse">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 rounded-full mx-auto mb-3 sm:mb-4"></div>
+                <div className="h-6 sm:h-8 bg-gray-200 rounded w-12 sm:w-16 mx-auto mb-2"></div>
+                <div className="h-3 sm:h-4 bg-gray-200 rounded w-full"></div>
               </div>
             ))}
           </div>
@@ -223,39 +223,40 @@ const StatsSection: React.FC = () => {
   }
 
   return (
-    <section className="py-16 bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50 relative overflow-hidden">
-      {/* Efectos de fondo */}
+    <section className="py-12 sm:py-16 bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50 relative overflow-hidden">
+      {/* Efectos de fondo - Reducidos en móvil */}
       <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-      <div className="absolute top-10 left-10 w-64 h-64 bg-purple-300/20 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-10 right-10 w-48 h-48 bg-pink-300/20 rounded-full blur-3xl"></div>
+      <div className="absolute top-5 sm:top-10 left-5 sm:left-10 w-32 sm:w-64 h-32 sm:h-64 bg-purple-300/20 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-5 sm:bottom-10 right-5 sm:right-10 w-24 sm:w-48 h-24 sm:h-48 bg-pink-300/20 rounded-full blur-3xl"></div>
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Título de la sección */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full text-purple-800 font-semibold mb-4">
-            <span className="text-lg">📊</span>
-            Estadísticas en Tiempo Real
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 relative z-10">
+        {/* Título de la sección - Responsive */}
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full text-purple-800 font-semibold mb-3 sm:mb-4 text-sm sm:text-base">
+            <span className="text-sm sm:text-lg">📊</span>
+            <span className="hidden sm:inline">Estadísticas en Tiempo Real</span>
+            <span className="sm:hidden">Tiempo Real</span>
             {isRealTimeUpdate && (
               <div className="flex items-center gap-1 ml-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-green-600 font-bold">Actualizando...</span>
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-green-600 font-bold hidden sm:inline">Actualizando...</span>
               </div>
             )}
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent px-2 sm:px-0">
             Charlitron Eventos 360 en Números
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-lg text-gray-600 max-w-2xl mx-auto px-4 sm:px-0">
             Nuestra plataforma crece cada día con más proveedores verificados y eventos exitosos en todo México
           </p>
         </div>
 
-        {/* Grid de estadísticas */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        {/* Grid de estadísticas - Optimizado móvil */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-6">
           {statItems.map((stat, index) => (
             <div
               key={index}
-              className={`group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-500 border border-gray-100 overflow-hidden`}
+              className={`group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-500 border border-gray-100 overflow-hidden`}
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {/* Efecto de gradiente en hover */}
@@ -263,19 +264,22 @@ const StatsSection: React.FC = () => {
               
               {/* Contenido */}
               <div className="relative z-10 text-center">
-                {/* Icono */}
-                <div className={`w-16 h-16 ${stat.bgColor} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                  <span className="text-2xl">{stat.icon}</span>
+                {/* Icono - Responsive */}
+                <div className={`w-12 h-12 sm:w-16 sm:h-16 ${stat.bgColor} rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                  <span className="text-lg sm:text-2xl">{stat.icon}</span>
                 </div>
                 
-                {/* Número */}
-                <div className={`text-3xl md:text-4xl font-bold ${stat.textColor} mb-2 group-hover:scale-110 transition-transform duration-300`}>
+                {/* Número - Responsive */}
+                <div className={`text-xl sm:text-3xl md:text-4xl font-bold ${stat.textColor} mb-1 sm:mb-2 group-hover:scale-110 transition-transform duration-300`}>
                   {stat.value}
                 </div>
                 
-                {/* Label */}
-                <div className="text-sm text-gray-600 font-medium leading-tight">
-                  {stat.label}
+                {/* Label - Responsive */}
+                <div className="text-xs sm:text-sm text-gray-600 font-medium leading-tight">
+                  {stat.label.length > 15 && window.innerWidth < 640 ? 
+                    stat.label.split(' ').slice(0, 2).join(' ') : 
+                    stat.label
+                  }
                 </div>
               </div>
 
@@ -285,18 +289,18 @@ const StatsSection: React.FC = () => {
           ))}
         </div>
 
-        {/* Call-to-action final */}
-        <div className="text-center mt-12">
-          <div className="inline-flex flex-col sm:flex-row items-center gap-4">
-            <div className="text-gray-600">
+        {/* Call-to-action final - Móvil optimizado */}
+        <div className="text-center mt-8 sm:mt-12 px-4 sm:px-0">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <div className="text-sm sm:text-base text-gray-600 text-center">
               ¿Quieres formar parte de estas estadísticas?
             </div>
             <a
               href="/proveedores/planes"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-full hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
+              className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-full hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300 shadow-lg text-sm sm:text-base"
             >
-              <span>🚀</span>
-              Únete como Proveedor
+              <span className="text-sm sm:text-base">🚀</span>
+              <span>Únete como Proveedor</span>
             </a>
           </div>
         </div>
