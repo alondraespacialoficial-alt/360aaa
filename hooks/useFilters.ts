@@ -63,7 +63,8 @@ export const useFilters = (providers: ProviderWithServices[]) => {
   // Función para obtener precio mínimo de los servicios de un proveedor
   const getProviderMinPrice = (provider: ProviderWithServices): number => {
     if (!provider.services || provider.services.length === 0) {
-      return 0;
+      // Si no hay servicios, usar un precio base o campo de precio directo
+      return provider.price || provider.base_price || 0;
     }
     const prices = provider.services.map(s => s.price || 0);
     return Math.min(...prices);
@@ -100,7 +101,7 @@ export const useFilters = (providers: ProviderWithServices[]) => {
 
   // Aplicar todos los filtros
   const filteredProviders = useMemo(() => {
-    return providers.filter(provider => {
+    const filtered = providers.filter(provider => {
       // Filtro por ciudad
       if (filters.city && provider.city !== filters.city) {
         return false;
@@ -128,6 +129,8 @@ export const useFilters = (providers: ProviderWithServices[]) => {
 
       return true;
     });
+    
+    return filtered;
   }, [providers, filters]);
 
   // Estadísticas de los filtros
