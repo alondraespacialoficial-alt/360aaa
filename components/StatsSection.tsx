@@ -105,7 +105,7 @@ const StatsSection: React.FC = () => {
         supabase.from('provider_reviews').select('*', { count: 'exact', head: true }),
         supabase.from('provider_reviews').select('rating'),
         supabase.from('providers').select('*', { count: 'exact', head: true }).eq('is_premium', true),
-        supabase.from('providers').select('city').not('city', 'is', null)
+        supabase.from('providers').select('city, state').eq('is_active', true) // Mejorar consulta
       ]);
 
       // Calcular promedio de calificaciones
@@ -113,10 +113,16 @@ const StatsSection: React.FC = () => {
         ? ratingsResponse.data.reduce((sum, review) => sum + review.rating, 0) / ratingsResponse.data.length 
         : 5.0; // Valor por defecto atractivo
 
-      // Contar ciudades únicas
+      // Contar ciudades únicas - mejorar la consulta
       const uniqueCities = citiesResponse.data 
-        ? new Set(citiesResponse.data.map(provider => provider.city).filter(city => city)).size 
+        ? new Set(citiesResponse.data
+            .map(provider => provider.city)
+            .filter(city => city && city.trim() !== '') // Filtrar vacíos y espacios
+          ).size 
         : 1;
+
+      console.log('🏙️ Ciudades encontradas:', citiesResponse.data?.map(p => p.city).filter(Boolean));
+      console.log('📊 Total ciudades únicas:', uniqueCities);
 
       setStats({
         totalProviders: providersResponse.count || 1,
@@ -124,7 +130,7 @@ const StatsSection: React.FC = () => {
         totalReviews: reviewsResponse.count || 1,
         averageRating: avgRating,
         premiumProviders: premiumResponse.count || 1,
-        activeCities: uniqueCities
+        activeCities: uniqueCities || 1 // Garantizar mínimo 1
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
