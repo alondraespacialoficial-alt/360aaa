@@ -5,59 +5,8 @@ import FavoriteButton from '../../components/FavoriteButton';
 import SEOHead from '../../components/SEOHead';
 import ProviderDashboard from '../../components/ProviderDashboard';
 import { useProviderTracking } from '../../hooks/useProviderTracking';
-
-// Componente para el formulario de reseña
-function ReviewForm({ providerId, onNewReview }) {
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    if (!comment.trim()) {
-      setError("Por favor escribe tu opinión");
-      setLoading(false);
-      return;
-    }
-    const { data, error: insertError } = await supabase
-      .from('provider_reviews')
-      .insert({ provider_id: providerId, rating, comment })
-      .select()
-      .single();
-    if (insertError || !data) {
-      setError("No se pudo guardar la reseña");
-    } else {
-      setSuccess(true);
-      setComment("");
-      setRating(5);
-      onNewReview(data);
-    }
-    setLoading(false);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="mb-4 p-4 bg-white border rounded-lg shadow">
-      <label className="block mb-2 font-medium">Calificación:</label>
-      <div className="flex gap-1 mb-2">
-        {[1,2,3,4,5].map(star => (
-          <button type="button" key={star} onClick={() => setRating(star)} className={star <= rating ? "text-yellow-500" : "text-gray-300"}>
-            ★
-          </button>
-        ))}
-      </div>
-      <label className="block mb-2 font-medium">Opinión:</label>
-      <textarea value={comment} onChange={e => setComment(e.target.value)} className="w-full border rounded p-2 mb-2" rows={3} placeholder="Escribe tu experiencia..." />
-      {error && <p className="text-red-500 mb-2">{error}</p>}
-      {success && <p className="text-green-600 mb-2">¡Gracias por tu reseña!</p>}
-      <button type="submit" disabled={loading} className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition">
-        {loading ? "Guardando..." : "Enviar reseña"}
-      </button>
-    </form>
-  );
-}
+import AuthenticatedReviewForm from '../../components/AuthenticatedReviewForm';
+import ReviewsDisplay from '../../components/ReviewsDisplay';
 
 // Componente principal SupplierDetail
 export default function SupplierDetail() {
@@ -688,27 +637,50 @@ export default function SupplierDetail() {
         </div>
       )}
 
-      {/* Formulario y lista de reseñas */}
+      {/* Sistema de Reseñas Autenticadas */}
       <div className="mt-10 px-4 md:px-6">
-        <h2 className="text-xl font-semibold text-purple-700 mb-4">Reseñas de Proveedores</h2>
-        <ReviewForm providerId={supplier.id} onNewReview={review => setReviews([review, ...reviews])} />
-        <div className="mt-6">
-          {reviews.length === 0 ? (
-            <p className="text-gray-500">No hay reseñas aún.</p>
-          ) : (
-            <ul className="space-y-4">
-              {reviews.map(r => (
-                <li key={r.id} className="p-4 bg-white border rounded shadow">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-yellow-500">{'★'.repeat(r.rating)}</span>
-                    <span className="text-gray-700 font-semibold">{r.comment}</span>
-                  </div>
-                  <div className="text-xs text-gray-400">{r.created_at?.slice(0,10)}</div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <h2 className="text-xl font-semibold text-purple-700 mb-6">Reseñas y Opiniones</h2>
+        
+        {/* Formulario de reseña autenticado */}
+        <AuthenticatedReviewForm
+          providerId={supplier.id}
+          providerName={supplier.name}
+          onNewReview={(review) => setReviews([review, ...reviews])}
+          existingReviews={reviews}
+        />
+        
+        {/* Mostrar reseñas con sistema avanzado */}
+        <ReviewsDisplay
+          reviews={reviews}
+          onHelpfulVote={async (reviewId) => {
+            try {
+              // Obtener el valor actual
+              const { data: currentReview } = await supabase
+                .from('provider_reviews')
+                .select('helpful_votes')
+                .eq('id', reviewId)
+                .single();
+              
+              if (currentReview) {
+                const { error } = await supabase
+                  .from('provider_reviews')
+                  .update({ helpful_votes: currentReview.helpful_votes + 1 })
+                  .eq('id', reviewId);
+                
+                if (!error) {
+                  // Actualizar estado local
+                  setReviews(prev => prev.map(review => 
+                    review.id === reviewId 
+                      ? { ...review, helpful_votes: review.helpful_votes + 1 }
+                      : review
+                  ));
+                }
+              }
+            } catch (error) {
+              console.error('Error al votar como útil:', error);
+            }
+          }}
+        />
       </div>
     </div>
   );
