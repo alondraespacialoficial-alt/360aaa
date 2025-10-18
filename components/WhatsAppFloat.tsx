@@ -15,7 +15,7 @@ const WhatsAppFloat: React.FC = () => {
 
   const handleClick = () => {
     const message = encodeURIComponent(
-      "🎉 ¡Hola Charlitron Eventos 360!\n\n✨ Me interesa conocer más sobre sus servicios para eventos.\n\n📅 Estoy organizando: [Tipo de evento]\n📍 Ubicación: [Ciudad, estado]\n👥 Invitados aproximados: [Cantidad]\n\n💬 ¿Podrían brindarme información personalizada?\n\n🙏 ¡Gracias por su atención!"
+      "� ¡Hola Charlitron Eventos 360!\n\n📋 Solicito más informes sobre su directorio de proveedores para eventos.\n\n📌 Me interesa conocer:\n• Servicios disponibles en el directorio\n• Cobertura de proveedores por región\n• Proceso de registro y membresías\n• Beneficios para organizadores de eventos\n\n📍 Ubicación de mi evento: [Ciudad, Estado]\n� Tipo de evento: [Especificar]\n\n� Deseo información profesional para tomar la mejor decisión.\n\n🙏 Gracias por su atención profesional."
     );
     const whatsappUrl = `https://api.whatsapp.com/send/?phone=%2B524444237092&text=${message}&type=phone_number&app_absent=0`;
     window.open(whatsappUrl, '_blank');
@@ -67,7 +67,7 @@ const WhatsAppFloat: React.FC = () => {
 
           {/* Tooltip en hover - Desktop */}
           <div className="absolute right-full mr-3 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white text-sm px-3 py-2 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
-            ¡Chatea con nosotros!
+            Informes del Directorio
             <div className="absolute top-1/2 left-full transform -translate-y-1/2 w-0 h-0 border-l-4 border-l-gray-800 border-y-4 border-y-transparent"></div>
           </div>
         </button>
@@ -77,17 +77,17 @@ const WhatsAppFloat: React.FC = () => {
       <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-gradient-to-r from-green-500 to-green-600 text-white p-3 transform transition-all duration-500 translate-y-full opacity-0" id="whatsapp-banner">
         <div className="flex items-center justify-between max-w-sm mx-auto">
           <div className="flex items-center gap-3">
-            <span className="text-2xl animate-bounce">📱</span>
+            <span className="text-2xl animate-bounce">🏢</span>
             <div>
-              <div className="font-bold text-sm">¡Cotiza al instante!</div>
-              <div className="text-xs opacity-90">Respuesta inmediata por WhatsApp</div>
+              <div className="font-bold text-sm">Informes del Directorio</div>
+              <div className="text-xs opacity-90">Consulta profesional por WhatsApp</div>
             </div>
           </div>
           <button
             onClick={handleClick}
             className="bg-white text-green-600 px-4 py-2 rounded-full font-bold text-sm hover:bg-gray-100 transition-colors"
           >
-            Chatear
+            Consultar
           </button>
         </div>
       </div>

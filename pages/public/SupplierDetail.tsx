@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase, getProviderFullDetail } from '../../services/supabaseClient';
 import FavoriteButton from '../../components/FavoriteButton';
 import SEOHead from '../../components/SEOHead';
+import ProviderDashboard from '../../components/ProviderDashboard';
+import { useProviderTracking } from '../../hooks/useProviderTracking';
 
 // Componente para el formulario de reseña
 function ReviewForm({ providerId, onNewReview }) {
@@ -68,28 +70,119 @@ export default function SupplierDetail() {
   const [showModal, setShowModal] = useState(false);
   const [modalImg, setModalImg] = useState("");
 
+  // Validación temprana: si no hay ID, mostrar error
+  if (!id) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Error: Proveedor no encontrado</h1>
+          <p className="text-gray-600 mb-4">No se pudo cargar la información del proveedor.</p>
+          <button 
+            onClick={() => navigate('/')} 
+            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+          >
+            Volver al inicio
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 📊 Hook de tracking para analytics
+  const {
+    trackWhatsAppClick,
+    trackPhoneClick,
+    trackWebsiteClick,
+    trackInstagramClick,
+    trackFacebookClick,
+    trackServiceView,
+    trackGalleryView,
+    trackCategoryClick
+  } = useProviderTracking(id);
+
+  // 📊 Funciones de tracking para eventos de contacto
+  const handleWhatsAppClick = () => {
+    trackWhatsAppClick(supplier?.whatsapp);
+  };
+
+  const handlePhoneClick = () => {
+    trackPhoneClick(supplier?.phone);
+  };
+
+  const handleWebsiteClick = () => {
+    trackWebsiteClick(supplier?.website);
+  };
+
+  const handleInstagramClick = () => {
+    trackInstagramClick(supplier?.instagram_url);
+  };
+
+  const handleFacebookClick = () => {
+    trackFacebookClick(supplier?.facebook_url);
+  };
+
+  const handleServiceClick = (service: any) => {
+    trackServiceView(service.name, service.id);
+    toggleCartItem(service);
+  };
+
+  const handleGalleryClick = () => {
+    if (supplier?.media?.length) {
+      trackGalleryView(supplier.media.length);
+    }
+  };
+
+  const handleCategoryClick = (category: any) => {
+    trackCategoryClick(category.name, category.slug);
+  };
+
   useEffect(() => {
     async function fetchDetails() {
+      // Validar que tenemos un ID válido
+      if (!id) {
+        console.error('❌ No se encontró ID del proveedor en la URL');
+        setSupplier(null);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       
-      // Usar la función optimizada del cliente Supabase
-      const result = await getProviderFullDetail(id);
-      
-      if (result.provider) {
-        // Unir servicios e imágenes al proveedor
-        setSupplier({
-          ...result.provider,
-          services: result.services || [],
-          media: result.media || []
-        });
-        setReviews(result.reviews || []);
-      } else {
+      try {
+        console.log('🔍 Obteniendo detalles del proveedor:', id);
+        
+        // Usar la función optimizada del cliente Supabase
+        const result = await getProviderFullDetail(id);
+        
+        if (result.provider) {
+          console.log('✅ Proveedor encontrado:', result.provider.name);
+          console.log('📋 Categorías del proveedor:', result.providerCategories);
+          
+          // Mapear categorías correctamente
+          const mappedCategories = result.providerCategories?.map(pc => pc.categories).filter(Boolean) || [];
+          
+          // Unir servicios, imágenes y categorías al proveedor
+          setSupplier({
+            ...result.provider,
+            services: result.services || [],
+            media: result.media || [],
+            categories: mappedCategories
+          });
+          setReviews(result.reviews || []);
+        } else {
+          console.warn('⚠️ No se encontró el proveedor con ID:', id);
+          setSupplier(null);
+          setReviews([]);
+        }
+      } catch (error) {
+        console.error('🚨 Error obteniendo detalles del proveedor:', error);
         setSupplier(null);
         setReviews([]);
       }
       
       setLoading(false);
     }
+    
     fetchDetails();
   }, [id]);
 
@@ -232,7 +325,11 @@ export default function SupplierDetail() {
                   <div 
                     key={img.id} 
                     className="aspect-square bg-white rounded-xl border-2 border-purple-200 shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105" 
-                    onClick={() => { setModalImg(img.url); setShowModal(true); }}
+                    onClick={() => { 
+                      handleGalleryClick();
+                      setModalImg(img.url); 
+                      setShowModal(true); 
+                    }}
                     title="Haz clic para ver en grande"
                   >
                     <img 
@@ -264,6 +361,30 @@ export default function SupplierDetail() {
               )}
               <p className="text-gray-600 mb-2">{supplier.description}</p>
               
+              {/* Categorías del proveedor */}
+              {supplier.categories && supplier.categories.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Categorías:</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {supplier.categories.map((category: any) => {
+                      if (!category) return null;
+                      
+                      return (
+                        <Link
+                          key={category.id}
+                          to={`/categoria/${category.slug}`}
+                          onClick={() => handleCategoryClick(category)}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 hover:text-purple-800 rounded-full text-sm font-medium transition-colors duration-200 border border-purple-200 hover:border-purple-300"
+                        >
+                          <span>🏷️</span>
+                          <span>{category.name}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
               {/* Dirección - Detectar si es un enlace o dirección normal */}
               <div className="text-gray-500 mb-4">
                 {supplier.address && (
@@ -292,7 +413,13 @@ export default function SupplierDetail() {
               {/* Contacto en renglones separados */}
               <div className="mt-2 space-y-2">
                 {supplier.whatsapp && (
-                  <a href={buildSimpleWALink()} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-3 py-1 bg-green-600 text-white rounded shadow hover:bg-green-700 transition">
+                  <a 
+                    href={buildSimpleWALink()} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    onClick={handleWhatsAppClick}
+                    className="inline-flex items-center px-3 py-1 bg-green-600 text-white rounded shadow hover:bg-green-700 transition"
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 13.487a8.25 8.25 0 1 1-3.612-3.612m3.612 3.612c-.306-.153-.612-.306-.918-.459a2.25 2.25 0 0 0-2.835.459c-.459.459-.918.918-1.377 1.377a2.25 2.25 0 0 0 .459 2.835c.153.306.306.612.459.918" /></svg>
                     💬 WhatsApp: {supplier.whatsapp}
                   </a>
@@ -301,19 +428,48 @@ export default function SupplierDetail() {
                   <a href={`mailto:${supplier.email}`} className="text-purple-700 underline block">Email: {supplier.email}</a>
                 )}
                 {supplier.phone && (
-                  <span className="text-blue-700 block">Teléfono: {supplier.phone}</span>
+                  <button 
+                    onClick={handlePhoneClick}
+                    className="text-blue-700 underline block cursor-pointer bg-transparent border-none p-0 text-left"
+                  >
+                    Teléfono: {supplier.phone}
+                  </button>
                 )}
               </div>
               {/* Redes sociales: solo mostrar si existen */}
               <div className="flex flex-row gap-4 mt-4">
                 {supplier.website && (
-                  <a href={supplier.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Sitio web</a>
+                  <a 
+                    href={supplier.website} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    onClick={handleWebsiteClick}
+                    className="text-blue-600 underline"
+                  >
+                    Sitio web
+                  </a>
                 )}
                 {supplier.instagram_url && (
-                  <a href={supplier.instagram_url} target="_blank" rel="noopener noreferrer" className="text-pink-600 underline">Instagram</a>
+                  <a 
+                    href={supplier.instagram_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    onClick={handleInstagramClick}
+                    className="text-pink-600 underline"
+                  >
+                    Instagram
+                  </a>
                 )}
                 {supplier.facebook_url && (
-                  <a href={supplier.facebook_url} target="_blank" rel="noopener noreferrer" className="text-blue-800 underline">Facebook</a>
+                  <a 
+                    href={supplier.facebook_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    onClick={handleFacebookClick}
+                    className="text-blue-800 underline"
+                  >
+                    Facebook
+                  </a>
                 )}
               </div>
               <div className="mt-4 text-sm text-gray-500">
@@ -336,6 +492,14 @@ export default function SupplierDetail() {
           )}
         </div>
       )}
+
+      {/* Dashboard de Métricas Públicas */}
+      <div className="px-4 md:px-6">
+        <ProviderDashboard 
+          providerId={id} 
+          providerName={supplier?.name}
+        />
+      </div>
 
       {/* Servicios del proveedor */}
       {supplier?.services && supplier.services.length > 0 && (
@@ -398,7 +562,7 @@ export default function SupplierDetail() {
                           ${service.price?.toLocaleString()}
                         </span>
                         <button 
-                          onClick={() => toggleCartItem(service)} 
+                          onClick={() => handleServiceClick(service)} 
                           className={`
                             px-4 py-2 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105
                             ${isInCart 
@@ -496,6 +660,7 @@ export default function SupplierDetail() {
                           href={buildWALink()}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={handleWhatsAppClick}
                           className="block w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg text-center"
                         >
                           <div className="flex items-center justify-center gap-2">

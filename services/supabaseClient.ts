@@ -1,5 +1,20 @@
 // Consulta completa de proveedor, servicios, reseñas y media
 export async function getProviderFullDetail(provider_id: string) {
+  if (!provider_id) {
+    console.error('❌ getProviderFullDetail: provider_id es requerido');
+    return {
+      provider: null,
+      services: [],
+      reviews: [],
+      media: [],
+      providerCategories: [],
+      profiles: [],
+      errors: { providerError: new Error('ID de proveedor no válido') }
+    };
+  }
+
+  console.log('🔍 Obteniendo detalles completos para proveedor:', provider_id);
+
   // Consulta proveedor
   const { data: provider, error: providerError } = await supabase
     .from('providers')
@@ -7,11 +22,23 @@ export async function getProviderFullDetail(provider_id: string) {
     .eq('id', provider_id)
     .single();
 
+  if (providerError) {
+    console.error('❌ Error obteniendo proveedor:', providerError.message);
+  } else {
+    console.log('✅ Proveedor encontrado:', provider?.name);
+  }
+
   // Consulta servicios
   const { data: services, error: servicesError } = await supabase
     .from('provider_services')
     .select('*')
     .eq('provider_id', provider_id);
+
+  if (servicesError) {
+    console.warn('⚠️ Error obteniendo servicios:', servicesError.message);
+  } else {
+    console.log('✅ Servicios encontrados:', services?.length || 0);
+  }
 
   // Consulta reseñas
   const { data: reviews, error: reviewsError } = await supabase
@@ -20,6 +47,12 @@ export async function getProviderFullDetail(provider_id: string) {
     .eq('provider_id', provider_id)
     .order('created_at', { ascending: false });
 
+  if (reviewsError) {
+    console.warn('⚠️ Error obteniendo reseñas:', reviewsError.message);
+  } else {
+    console.log('✅ Reseñas encontradas:', reviews?.length || 0);
+  }
+
   // Consulta media
   const { data: media, error: mediaError } = await supabase
     .from('provider_media')
@@ -27,11 +60,29 @@ export async function getProviderFullDetail(provider_id: string) {
     .eq('provider_id', provider_id)
     .order('sort_order', { ascending: true });
 
-  // Consulta categorías del proveedor
+  if (mediaError) {
+    console.warn('⚠️ Error obteniendo media:', mediaError.message);
+  } else {
+    console.log('✅ Media encontrada:', media?.length || 0);
+  }
+
+  // Consulta categorías del proveedor con datos completos
   const { data: providerCategories, error: providerCategoriesError } = await supabase
     .from('provider_categories')
-    .select('category_id')
+    .select(`
+      category_id,
+      categories (
+        id,
+        name,
+        slug,
+        display_order
+      )
+    `)
     .eq('provider_id', provider_id);
+
+  if (providerCategoriesError) {
+    console.warn('⚠️ Error obteniendo categorías:', providerCategoriesError.message);
+  }
 
   // Consulta perfiles de usuarios que dejaron reseña
   let profiles = [];
@@ -43,6 +94,10 @@ export async function getProviderFullDetail(provider_id: string) {
         .select('id, full_name, role, created_at')
         .in('id', userIds);
       profiles = profilesData || [];
+      
+      if (profilesError) {
+        console.warn('⚠️ Error obteniendo perfiles:', profilesError.message);
+      }
     }
   }
 
@@ -218,4 +273,194 @@ export async function getProvidersWithServices() {
     console.error('🚨 Error en getProvidersWithServices:', error);
     return [];
   }
+}
+
+// ==========================================
+// FUNCIONES DE ANALYTICS Y TRACKING
+// ==========================================
+
+// Generar session ID único para el usuario
+function generateSessionId(): string {
+  return crypto.randomUUID();
+}
+
+// Obtener session ID del localStorage o crear uno nuevo
+function getSessionId(): string {
+  let sessionId = localStorage.getItem('charlitron_session_id');
+  if (!sessionId) {
+    sessionId = generateSessionId();
+    localStorage.setItem('charlitron_session_id', sessionId);
+  }
+  return sessionId;
+}
+
+// Detectar tipo de dispositivo
+function getDeviceType(): string {
+  const userAgent = navigator.userAgent.toLowerCase();
+  if (/mobile|android|iphone|ipad|phone/i.test(userAgent)) {
+    return /ipad|tablet/i.test(userAgent) ? 'tablet' : 'mobile';
+  }
+  return 'desktop';
+}
+
+// Obtener IP del usuario (aproximada)
+async function getUserIP(): Promise<string | null> {
+  try {
+    // Usamos un servicio público para obtener la IP
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    return data.ip || null;
+  } catch (error) {
+    console.warn('No se pudo obtener IP del usuario:', error);
+    return null;
+  }
+}
+
+// Función principal para registrar eventos de analytics
+export async function logProviderEvent(
+  providerId: string,
+  eventType: 'profile_view' | 'whatsapp_click' | 'phone_click' | 'website_click' | 
+            'instagram_click' | 'facebook_click' | 'service_view' | 'gallery_view',
+  metadata: Record<string, any> = {}
+) {
+  console.log('🎯 INICIANDO logProviderEvent:', { providerId, eventType, metadata });
+
+  try {
+    const sessionId = getSessionId();
+    const deviceType = getDeviceType();
+    const userAgent = navigator.userAgent;
+    const referrer = document.referrer || null;
+    const visitorIP = await getUserIP();
+
+    console.log('📋 Datos preparados:', {
+      sessionId: sessionId.substring(0, 8) + '...',
+      deviceType,
+      visitorIP,
+      userAgent: userAgent.substring(0, 50) + '...'
+    });
+
+    // MÉTODO 1: Intentar usar RPC
+    console.log('📡 Intentando método RPC: log_provider_event');
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('log_provider_event', {
+        p_provider_id: providerId,
+        p_event_type: eventType,
+        p_visitor_ip: visitorIP,
+        p_user_agent: userAgent,
+        p_referrer: referrer,
+        p_session_id: sessionId,
+        p_city: null,
+        p_country: null,
+        p_device_type: deviceType,
+        p_metadata: metadata
+      });
+
+      if (!rpcError && rpcData) {
+        console.log(`✅ RPC exitoso: ${eventType} para proveedor ${providerId}`);
+        console.log('📊 Respuesta RPC:', rpcData);
+        return { success: true, eventId: rpcData, method: 'rpc' };
+      } else {
+        console.warn('⚠️ RPC falló, intentando inserción directa:', rpcError);
+        throw new Error('RPC failed: ' + rpcError?.message);
+      }
+    } catch (rpcError) {
+      console.warn('⚠️ RPC no disponible, usando inserción directa');
+      
+      // MÉTODO 2: Inserción directa como fallback
+      console.log('📡 Usando inserción directa en provider_analytics');
+      const { data: directData, error: directError } = await supabase
+        .from('provider_analytics')
+        .insert([{
+          provider_id: providerId,
+          event_type: eventType,
+          visitor_ip: visitorIP,
+          user_agent: userAgent,
+          referrer: referrer,
+          session_id: sessionId,
+          city: null,
+          country: null,
+          device_type: deviceType,
+          metadata: metadata
+        }])
+        .select()
+        .single();
+
+      if (directError) {
+        console.error('❌ Error en inserción directa:', directError);
+        return { success: false, error: directError, method: 'direct' };
+      }
+
+      console.log(`✅ Inserción directa exitosa: ${eventType} para proveedor ${providerId}`);
+      console.log('📊 Respuesta directa:', directData);
+      
+      // Intentar refrescar stats manualmente
+      try {
+        await supabase.rpc('refresh_provider_stats');
+        console.log('🔄 Stats refrescadas manualmente');
+      } catch (refreshError) {
+        console.warn('⚠️ No se pudieron refrescar stats:', refreshError);
+      }
+      
+      return { success: true, eventId: directData.id, method: 'direct' };
+    }
+
+  } catch (error) {
+    console.error('🚨 Error en logProviderEvent:', error);
+    return { success: false, error };
+  }
+}
+
+// Función para obtener estadísticas de un proveedor
+export async function getProviderStats(providerId: string) {
+  try {
+    const { data, error } = await supabase.rpc('get_provider_stats', {
+      p_provider_id: providerId
+    });
+
+    if (error) {
+      console.error('Error obteniendo estadísticas:', error);
+      return { success: false, error, stats: null };
+    }
+
+    console.log(`📈 Estadísticas obtenidas para proveedor ${providerId}:`, data);
+    return { success: true, stats: data || {} };
+
+  } catch (error) {
+    console.error('Error en getProviderStats:', error);
+    return { success: false, error, stats: null };
+  }
+}
+
+// Función para refrescar estadísticas manualmente
+export async function refreshProviderStats() {
+  try {
+    const { error } = await supabase.rpc('refresh_provider_stats');
+
+    if (error) {
+      console.error('Error refrescando estadísticas:', error);
+      return { success: false, error };
+    }
+
+    console.log('📊 Estadísticas refrescadas exitosamente');
+    return { success: true };
+
+  } catch (error) {
+    console.error('Error en refreshProviderStats:', error);
+    return { success: false, error };
+  }
+}
+
+// Hook personalizado para tracking automático - se debe usar en un componente React
+export function createProviderTracker(providerId: string | null) {
+  const trackEvent = async (
+    eventType: 'profile_view' | 'whatsapp_click' | 'phone_click' | 'website_click' | 
+              'instagram_click' | 'facebook_click' | 'service_view' | 'gallery_view',
+    metadata: Record<string, any> = {}
+  ) => {
+    if (!providerId) return;
+    
+    return await logProviderEvent(providerId, eventType, metadata);
+  };
+
+  return { trackEvent };
 }

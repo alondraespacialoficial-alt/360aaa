@@ -20,6 +20,7 @@ import BlogPostsAdmin from './pages/admin/BlogPostsAdmin';
 import DiagnosticPage from './pages/admin/DiagnosticPage';
 import TestFiltersPage from './pages/admin/TestFiltersPage';
 import SearchTestPage from './pages/admin/SearchTestPage';
+import DebugPage from './pages/DebugPage';
 import AdminLayout from './components/layouts/AdminLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/admin/diagnostico" element={<DiagnosticPage />} />
             <Route path="/admin/test-filtros" element={<TestFiltersPage />} />
             <Route path="/admin/test-busqueda" element={<SearchTestPage />} />
+            <Route path="/debug" element={<DebugPage />} />
             <Route element={<AdminLayout />}>
               <Route path="/admin/panel" element={<AdminPanel />} />
               <Route path="/admin/blog" element={<BlogAdmin />} />
