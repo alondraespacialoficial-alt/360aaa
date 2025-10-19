@@ -23,6 +23,7 @@ import SearchTestPage from './pages/admin/SearchTestPage';
 import DebugPage from './pages/DebugPage';
 import AdminLayout from './components/layouts/AdminLayout';
 import ErrorBoundary from './components/ErrorBoundary';
+import AIFloatingChat from './components/AIFloatingChat';
 
 export default function App() {
   return (
@@ -55,6 +56,10 @@ export default function App() {
             {/* Default route */}
             <Route path="/" element={<HomePanel />} />
           </Routes>
+          
+          {/* Asistente Virtual flotante disponible en toda la app */}
+          <AIFloatingChat />
+          
           </BrowserRouter>
         </AuthProvider>
       </ThemeProvider>

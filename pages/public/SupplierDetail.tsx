@@ -232,6 +232,22 @@ export default function SupplierDetail() {
     return <div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div></div>;
   }
 
+  // Validación adicional para supplier null
+  if (!supplier) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 text-center">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">Proveedor no encontrado</h1>
+        <p className="text-gray-600 mb-6">Lo sentimos, no pudimos encontrar la información de este proveedor.</p>
+        <Link 
+          to="/" 
+          className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          Volver al directorio
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto font-sans bg-white">
       {/* SEO dinámico */}
