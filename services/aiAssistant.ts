@@ -156,12 +156,14 @@ class AIAssistantService {
         { data: providers },
         { data: categories }, 
         { data: reviews },
-        { data: recentAnalytics }
+        { data: recentAnalytics },
+        { data: services }
       ] = await Promise.all([
-        supabase.from('providers').select('id, name, city, is_premium, featured').eq('is_active', true),
+        supabase.from('providers').select('id, name, city, is_premium, featured, description, whatsapp').eq('is_active', true),
         supabase.from('categories').select('*').order('display_order'),
         supabase.from('provider_reviews').select('provider_id, rating, created_at').order('created_at', { ascending: false }).limit(50),
-        supabase.from('provider_analytics').select('provider_id, event_type').gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()).limit(100)
+        supabase.from('provider_analytics').select('provider_id, event_type').gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()).limit(100),
+        supabase.from('provider_services').select('provider_id, category_id, service_name, price_range, description').limit(200)
       ]);
 
       // Calcular estadísticas
@@ -209,6 +211,24 @@ class AIAssistantService {
       // Ciudades disponibles
       const cities = [...new Set(providers?.map(p => p.city).filter(Boolean))];
 
+      // Agrupar servicios por categoría con precios
+      const servicesByCategory: Record<string, Array<{ provider_name: string; service: string; price_range: string; city: string }>> = {};
+      services?.forEach(service => {
+        const provider = providers?.find(p => p.id === service.provider_id);
+        if (provider && service.price_range) {
+          const categoryName = categories?.find(c => c.id === service.category_id)?.name || 'Otros';
+          if (!servicesByCategory[categoryName]) {
+            servicesByCategory[categoryName] = [];
+          }
+          servicesByCategory[categoryName].push({
+            provider_name: provider.name,
+            service: service.service_name || service.description || 'Servicio',
+            price_range: service.price_range,
+            city: provider.city || 'No especificada'
+          });
+        }
+      });
+
       return `
 CHARLITRON EVENTOS 360 - DIRECTORIO DE PROVEEDORES
 =================================================
@@ -222,6 +242,15 @@ ESTADÍSTICAS ACTUALES:
 CATEGORÍAS DISPONIBLES:
 ${categories?.map(c => `- ${c.name} (${c.slug})`).join('\n') || 'No hay categorías'}
 
+IMPORTANTE - ESPECIALIDADES POR CATEGORÍA:
+🎥 VIDEO/FOTOGRAFÍA: Bodas, eventos, corporativos, quinceañeras
+🎵 MÚSICA/DJ: DJs, sonido, grupos musicales, mariachis
+🍽️ BANQUETES/CATERING: Comida, bebidas, servicio de meseros
+🎪 DECORACIÓN: Flores, centros de mesa, ambientación, mobiliario
+🎂 REPOSTERÍA: Pasteles, dulces, candy bar, postres
+🚌 TRANSPORTE: Camiones, autos, limousinas
+🏨 VENUES: Salones, jardines, hoteles para eventos
+
 PROVEEDORES MEJOR CALIFICADOS:
 ${topRatedProviders.map(p => `- ${providerNames[p.providerId] || 'Proveedor'}: ${p.avgRating.toFixed(1)}⭐ (${p.reviewCount} reseñas)`).join('\n') || 'No hay suficientes reseñas'}
 
@@ -230,22 +259,35 @@ ${mostVisited.map(([id, visits]) => `- ${providerNames[id] || 'Proveedor'}: ${vi
 
 CIUDADES PRINCIPALES: ${cities.slice(0, 5).join(', ')}
 
-SERVICIOS:
+PROVEEDORES Y SERVICIOS POR CATEGORÍA:
+${Object.entries(servicesByCategory).slice(0, 5).map(([category, serviceList]) => 
+  `${category.toUpperCase()}:
+${serviceList.slice(0, 3).map(s => `- ${s.provider_name} (${s.city}): ${s.service} - ${s.price_range}`).join('\n')}`
+).join('\n\n') || 'Información de servicios no disponible'}
+
+RANGOS DE PRECIOS TÍPICOS:
+🎥 Video/Fotografía: $2,000 - $15,000 MXN
+🎵 Música/DJ: $1,500 - $8,000 MXN  
+🍽️ Banquetes: $150 - $500 MXN por persona
+🎪 Decoración: $3,000 - $20,000 MXN
+🎂 Repostería: $800 - $5,000 MXN
+
+SERVICIOS PLATFORM:
 - Búsqueda de proveedores por categoría y ubicación
 - Reseñas y calificaciones verificadas
-- Información de contacto directo (WhatsApp, teléfono, redes sociales)
+- Información de contacto directo (WhatsApp, teléfono)
 - Galería de trabajos de cada proveedor
-- Sistema de favoritos para usuarios
 - Comparación de servicios y precios
 
 INSTRUCCIONES PARA EL ASISTENTE:
 - Responde siempre en español de México
 - SÉ BREVE Y CONCISO: Máximo 3-4 líneas por respuesta
 - Usa emojis para hacer las respuestas más atractivas
-- Ve directo al punto, no des información innecesaria
-- Si no tienes información exacta, di "no tengo esos datos disponibles"
-- Incluye solo la información más relevante
-- Una llamada a la acción simple al final
+- CUANDO PREGUNTEN POR PRESUPUESTO: Menciona rangos específicos basados en la info disponible
+- CUANDO PREGUNTEN POR UBICACIÓN: Filtra proveedores de esa ciudad específica
+- Si solicitan presupuesto + ubicación: Da 2-3 recomendaciones específicas de esa ciudad con rangos de precio
+- Incluye una llamada a la acción para contactar proveedores
+- Si no tienes datos exactos, da rangos aproximados pero indica que contacten para cotización
 - NO des explicaciones largas ni contexto extra
 `;
     } catch (error) {
@@ -272,7 +314,25 @@ Puedo ayudarte con:
       throw new Error('GEMINI_API_KEY no configurada');
     }
 
-    const fullPrompt = `${context}\n\nPREGUNTA DEL USUARIO: ${prompt}\n\nResponde de manera útil, amigable y específica usando la información del contexto. Limita tu respuesta a 300 palabras máximo.`;
+    // Detectar si la pregunta incluye presupuesto, ubicación y categoría
+    const hasBudget = /\$\d+|\d+\s*(pesos?|mx|mxn|mil|miles)/i.test(prompt);
+    const hasLocation = /en\s+[\w\s]+|de\s+[\w\s]+|potosí|guadalajara|cdmx|méxico|monterrey/i.test(prompt);
+    const hasCategory = /(video|fotograf|music|dj|banquet|catering|decorac|pastel|flores|sonido)/i.test(prompt);
+    
+    let specificInstructions = '';
+    if (hasBudget && hasLocation && hasCategory) {
+      specificInstructions = '\n\nESPECIAL: El usuario menciona presupuesto, ubicación Y categoría específica. SOLO recomienda proveedores que coincidan EXACTAMENTE con esa categoría en esa ciudad con ese presupuesto. NO recomiendes proveedores de otras categorías.';
+    } else if (hasBudget && hasLocation) {
+      specificInstructions = '\n\nESPECIAL: El usuario menciona presupuesto Y ubicación. Da 2-3 recomendaciones específicas de proveedores de esa ciudad con rangos de precio que se ajusten a su presupuesto. Sé muy específico y práctico.';
+    } else if (hasCategory) {
+      specificInstructions = '\n\nESPECIAL: El usuario busca una categoría específica. SOLO recomienda proveedores de esa categoría exacta, no de otras.';
+    } else if (hasBudget) {
+      specificInstructions = '\n\nESPECIAL: El usuario menciona un presupuesto. Recomienda opciones que se ajusten a ese rango de precio específico.';
+    } else if (hasLocation) {
+      specificInstructions = '\n\nESPECIAL: El usuario pregunta por una ubicación específica. Filtra solo proveedores de esa ciudad.';
+    }
+
+    const fullPrompt = `${context}\n\nPREGUNTA DEL USUARIO: ${prompt}${specificInstructions}\n\nResponde de manera útil, amigable y específica usando la información del contexto. Máximo 300 caracteres.`;
 
     const requestBody = {
       contents: [{
@@ -384,8 +444,17 @@ Puedo ayudarte con:
       const rateLimitResult = await this.checkRateLimit(userIP, 'ip');
       if (!rateLimitResult.allowed) {
         const resetTime = rateLimitResult.window_reset ? new Date(rateLimitResult.window_reset) : new Date();
-        const minutesUntilReset = Math.ceil((resetTime.getTime() - Date.now()) / (1000 * 60));
-        throw new Error(`Has alcanzado el límite de preguntas. Inténtalo nuevamente en ${minutesUntilReset} minutos.`);
+        const minutesUntilReset = Math.max(1, Math.ceil((resetTime.getTime() - Date.now()) / (1000 * 60)));
+        
+        let timeMessage = '';
+        if (minutesUntilReset <= 60) {
+          timeMessage = `${minutesUntilReset} minuto${minutesUntilReset > 1 ? 's' : ''}`;
+        } else {
+          const hours = Math.ceil(minutesUntilReset / 60);
+          timeMessage = `${hours} hora${hours > 1 ? 's' : ''}`;
+        }
+        
+        throw new Error(`Has alcanzado el límite de preguntas. Inténtalo nuevamente en ${timeMessage}.`);
       }
 
       // 3. Verificar cache
@@ -496,22 +565,82 @@ export const aiAssistant = new AIAssistantService();
 export async function getAIStats(period: 'today' | 'week' | 'month' = 'today') {
   try {
     const { data, error } = await supabase.rpc('get_ai_stats', { p_period: period });
-    if (error) throw error;
+    
+    if (error) {
+      console.error('Error calling get_ai_stats RPC:', error);
+      // Devolver estructura por defecto en caso de error
+      return {
+        period: period,
+        total_questions: 0,
+        total_cost_usd: 0,
+        avg_processing_time_ms: 0,
+        total_tokens_input: 0,
+        total_tokens_output: 0,
+        unique_users: 0,
+        top_questions: []
+      };
+    }
+    
+    // Validar que data no sea null
+    if (!data) {
+      console.warn('get_ai_stats returned null data');
+      return {
+        period: period,
+        total_questions: 0,
+        total_cost_usd: 0,
+        avg_processing_time_ms: 0,
+        total_tokens_input: 0,
+        total_tokens_output: 0,
+        unique_users: 0,
+        top_questions: []
+      };
+    }
+    
+    console.log(`AI Stats for ${period}:`, data);
     return data;
   } catch (error) {
     console.error('Error getting AI stats:', error);
-    return null;
+    // Devolver estructura por defecto en caso de error
+    return {
+      period: period,
+      total_questions: 0,
+      total_cost_usd: 0,
+      avg_processing_time_ms: 0,
+      total_tokens_input: 0,
+      total_tokens_output: 0,
+      unique_users: 0,
+      top_questions: []
+    };
   }
 }
 
 export async function updateAISettings(settings: Partial<AISettings>) {
   try {
+    // Obtener el id existente de configuración
+    const idRes = await supabase.from('ai_settings').select('id').limit(1).single();
+    if (idRes.error || !idRes.data) {
+      throw new Error('No se encontró la configuración de IA en la base de datos');
+    }
+
+    const settingsId = idRes.data.id;
+
+    // Hacer update y obtener solo una fila
     const { data, error } = await supabase
       .from('ai_settings')
-      .update(settings)
-      .eq('id', (await supabase.from('ai_settings').select('id').limit(1).single()).data?.id);
-    
-    if (error) throw error;
+      .update({ 
+        ...settings, 
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id', settingsId)
+      .select('*')
+      .single(); // ESTO ES CLAVE - single() asegura una sola fila
+
+    if (error) {
+      console.error('Supabase update error:', error);
+      throw new Error(`Error actualizando configuración: ${error.message}`);
+    }
+
+    console.log('AI Settings updated successfully:', data);
     return data;
   } catch (error) {
     console.error('Error updating AI settings:', error);

@@ -274,32 +274,26 @@ BEGIN
     CREATE POLICY "AI settings public read" ON ai_settings
         FOR SELECT USING (true);
         
+    -- Policy de admin: usar jwt.claims.email para comprobar administrador sin leer auth.users
     CREATE POLICY "AI settings admin only" ON ai_settings
         FOR ALL USING (
-            EXISTS (
-                SELECT 1 FROM auth.users 
-                WHERE id = auth.uid() 
-                AND email IN (
-                    'nadrian18@gmail.com', 
-                    'admin@charlitron.com',
-                    'ventas@charlitron.com'
-                )
+            current_setting('jwt.claims.email', true) IN (
+                'nadrian18@gmail.com', 
+                'admin@charlitron.com',
+                'ventas@charlitron.com'
             )
         );
         
     CREATE POLICY "AI usage insert" ON ai_usage_tracking
         FOR INSERT WITH CHECK (true);
         
+    -- Policy para lectura admin de uso: usar jwt.claims.email para evitar permisos sobre auth.users
     CREATE POLICY "AI usage admin read" ON ai_usage_tracking
         FOR SELECT USING (
-            EXISTS (
-                SELECT 1 FROM auth.users 
-                WHERE id = auth.uid() 
-                AND email IN (
-                    'nadrian18@gmail.com', 
-                    'admin@charlitron.com',
-                    'ventas@charlitron.com'
-                )
+            current_setting('jwt.claims.email', true) IN (
+                'nadrian18@gmail.com', 
+                'admin@charlitron.com',
+                'ventas@charlitron.com'
             )
         );
         

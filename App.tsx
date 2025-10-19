@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { AIStatusProvider } from './context/AIStatusContext';
 
 // Public pages
 import HomePanel from './pages/public/HomePanel';
@@ -30,7 +31,8 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <AuthProvider>
-          <BrowserRouter>
+          <AIStatusProvider>
+            <BrowserRouter>
           <Routes>
             {/* Public Routes */}
             <Route path="/embed" element={<Navigate to="/" replace />} />
@@ -60,7 +62,8 @@ export default function App() {
           {/* Asistente Virtual flotante disponible en toda la app */}
           <AIFloatingChat />
           
-          </BrowserRouter>
+            </BrowserRouter>
+          </AIStatusProvider>
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { aiAssistant } from '../services/aiAssistant';
+import { aiAssistant, getAISettings } from '../services/aiAssistant';
 import { ChatBubbleLeftRightIcon, XMarkIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
 import { useAuth } from '../context/AuthContext';
+import { useAIStatus } from '../context/AIStatusContext';
 import { supabase } from '../services/supabaseClient';
 
 interface Message {
@@ -22,11 +23,11 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isEnabled, setIsEnabled] = useState(true);
   const [remainingQuestions, setRemainingQuestions] = useState(5);
   const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null);
   
   const { user } = useAuth();
+  const { isAIEnabled } = useAIStatus(); // 🎯 USAR CONTEXTO EN LUGAR DE ESTADO LOCAL
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -77,6 +78,34 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
     scrollToBottom();
   }, [messages]);
 
+  // Cargar estado de IA desde la BD cada 5 segundos (polling simple)
+  useEffect(() => {
+    const checkAIStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('ai_settings')
+          .select('is_enabled')
+          .limit(1)
+          .single();
+        
+        if (!error && data && typeof data.is_enabled === 'boolean') {
+          // Solo usar el contexto si está disponible, sino mantener estado local
+          console.log('AI Status from DB:', data.is_enabled);
+        }
+      } catch (error) {
+        console.error('Error checking AI status:', error);
+      }
+    };
+
+    // Verificar inmediatamente
+    checkAIStatus();
+    
+    // Verificar cada 5 segundos
+    const interval = setInterval(checkAIStatus, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   // Mensaje de bienvenida al abrir y actualizar contador
   useEffect(() => {
     if (isOpen) {
@@ -115,7 +144,7 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading || !isEnabled) return;
+    if (!inputMessage.trim() || isLoading || !isAIEnabled) return;
 
     const userMessage = inputMessage.trim();
     setInputMessage('');
@@ -145,7 +174,7 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
         setRateLimitMessage(error.message);
       } else if (error.message.includes('no disponible')) {
         errorMessage = '🚧 El asistente virtual está temporalmente deshabilitado. Intenta más tarde.';
-        setIsEnabled(false);
+        // No necesitamos setIsEnabled local, el contexto maneja el estado
       }
       
       addMessage(errorMessage, false, true);
@@ -176,8 +205,8 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
 
   return (
     <>
-      {/* Botón flotante */}
-      <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
+      {/* Botón flotante - Posicionado arriba del WhatsApp */}
+      <div className={`fixed bottom-24 right-6 z-50 ${className}`}>
         {!isOpen && (
           <button
             onClick={() => setIsOpen(true)}
@@ -206,7 +235,7 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
                 <div>
                   <h3 className="font-semibold text-sm">Asistente Virtual</h3>
                   <p className="text-xs text-purple-100">
-                    {isEnabled ? `${remainingQuestions} preguntas restantes` : 'No disponible'}
+                    {isAIEnabled ? `${remainingQuestions} preguntas restantes` : 'No disponible'}
                   </p>
                 </div>
               </div>
@@ -278,7 +307,7 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
 
             {/* Input */}
             <div className="p-4 border-t border-gray-200 bg-white">
-              {isEnabled ? (
+              {isAIEnabled ? (
                 <div className="flex items-center gap-2">
                   <input
                     ref={inputRef}
@@ -288,12 +317,12 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
                     onKeyPress={handleKeyPress}
                     placeholder="Escribe tu pregunta..."
                     className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    disabled={isLoading || !isEnabled}
+                    disabled={isLoading || !isAIEnabled}
                     maxLength={500}
                   />
                   <button
                     onClick={handleSendMessage}
-                    disabled={!inputMessage.trim() || isLoading || !isEnabled}
+                    disabled={!inputMessage.trim() || isLoading || !isAIEnabled}
                     className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <PaperAirplaneIcon className="w-4 h-4" />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getAISettings, updateAISettings, getAIStats } from '../services/aiAssistant';
+import { useAIStatus } from '../context/AIStatusContext';
 import { 
   CpuChipIcon, 
   ChartBarIcon, 
@@ -34,6 +35,7 @@ interface AIStats {
 
 const AIAdminPanel: React.FC = () => {
   const [settings, setSettings] = useState<AISettings | null>(null);
+  const { refreshAIStatus } = useAIStatus(); // 🎯 USAR CONTEXTO PARA COMUNICAR CAMBIOS
   const [stats, setStats] = useState<{
     today: AIStats | null;
     week: AIStats | null;
@@ -63,6 +65,11 @@ const AIAdminPanel: React.FC = () => {
         getAIStats('week'),
         getAIStats('month')
       ]);
+
+      console.log('AI Settings:', settingsData);
+      console.log('Today Stats:', todayStats);
+      console.log('Week Stats:', weekStats);
+      console.log('Month Stats:', monthStats);
 
       setSettings(settingsData);
       setStats({
@@ -123,10 +130,13 @@ const AIAdminPanel: React.FC = () => {
         is_enabled: newEnabledState
       });
       
+      // Recargar datos para verificar que se guardó
+      await loadData();
+      
       setSuccess(
         newEnabledState 
-          ? '✅ Asistente virtual activado' 
-          : '🛑 Asistente virtual pausado'
+          ? '✅ Asistente virtual activado - Chat actualizado' 
+          : '🛑 Asistente virtual pausado - Chat deshabilitado'
       );
       
       setTimeout(() => setSuccess(null), 3000);
