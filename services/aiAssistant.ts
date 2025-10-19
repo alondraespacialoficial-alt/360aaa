@@ -98,10 +98,9 @@ class AIAssistantService {
     const { data, error } = await supabase
       .from('ai_settings')
       .select('*')
-      .limit(1)
-      .single();
+      .limit(1);
 
-    if (error || !data) {
+    if (error || !data || (Array.isArray(data) && data.length === 0)) {
       // Configuración por defecto si no hay en BD
       return {
         is_enabled: true,
@@ -116,7 +115,8 @@ class AIAssistantService {
       };
     }
 
-    return data;
+    // Si es array, tomar el primer elemento
+    return Array.isArray(data) ? data[0] : data;
   }
 
   private async checkRateLimit(userIdentifier: string, identifierType: 'ip' | 'user_id'): Promise<RateLimitResult> {
@@ -616,32 +616,36 @@ export async function getAIStats(period: 'today' | 'week' | 'month' = 'today') {
 
 export async function updateAISettings(settings: Partial<AISettings>) {
   try {
-    // Obtener el id existente de configuración
-    const idRes = await supabase.from('ai_settings').select('id').limit(1).single();
-    if (idRes.error || !idRes.data) {
+    // Primero obtener el ID de la configuración (sin .single() para evitar errores)
+    const { data: existingData, error: fetchError } = await supabase
+      .from('ai_settings')
+      .select('id')
+      .limit(1);
+
+    if (fetchError || !existingData || existingData.length === 0) {
       throw new Error('No se encontró la configuración de IA en la base de datos');
     }
 
-    const settingsId = idRes.data.id;
+    // Extraer el ID (manejar array)
+    const firstRow = existingData[0] as any;
+    const settingsId = firstRow.id;
 
-    // Hacer update y obtener solo una fila
+    // Actualizar usando el ID específico
     const { data, error } = await supabase
       .from('ai_settings')
-      .update({ 
-        ...settings, 
-        updated_at: new Date().toISOString() 
-      })
+      .update(settings)
       .eq('id', settingsId)
-      .select('*')
-      .single(); // ESTO ES CLAVE - single() asegura una sola fila
+      .select('*');
 
     if (error) {
       console.error('Supabase update error:', error);
       throw new Error(`Error actualizando configuración: ${error.message}`);
     }
 
-    console.log('AI Settings updated successfully:', data);
-    return data;
+    // Retornar la primera fila si hay múltiples
+    const result = Array.isArray(data) && data.length > 0 ? data[0] : data;
+    console.log('AI Settings updated successfully:', result);
+    return result;
   } catch (error) {
     console.error('Error updating AI settings:', error);
     throw error;
@@ -653,11 +657,12 @@ export async function getAISettings() {
     const { data, error } = await supabase
       .from('ai_settings')
       .select('*')
-      .limit(1)
-      .single();
+      .limit(1);
     
     if (error) throw error;
-    return data;
+    
+    // Manejar tanto array como objeto único
+    return Array.isArray(data) && data.length > 0 ? data[0] : data;
   } catch (error) {
     console.error('Error getting AI settings:', error);
     return null;

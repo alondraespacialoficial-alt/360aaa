@@ -66,7 +66,8 @@ const AIAdminPanel: React.FC = () => {
         getAIStats('month')
       ]);
 
-      console.log('AI Settings:', settingsData);
+      console.log('🔄 AI Settings cargados:', settingsData);
+      console.log('📊 is_enabled:', settingsData?.is_enabled);
       console.log('Today Stats:', todayStats);
       console.log('Week Stats:', weekStats);
       console.log('Month Stats:', monthStats);
@@ -123,14 +124,21 @@ const AIAdminPanel: React.FC = () => {
     
     try {
       setSaving(true);
+      setError(null);
+      
+      // 1. Actualizar en la BD
       await updateAISettings({ is_enabled: newEnabledState });
       
+      // 2. Actualizar estado local
       setSettings({
         ...settings,
         is_enabled: newEnabledState
       });
       
-      // Recargar datos para verificar que se guardó
+      // 3. 🎯 IMPORTANTE: Refrescar el contexto global para que el chat reaccione
+      await refreshAIStatus();
+      
+      // 4. Recargar todos los datos para confirmar
       await loadData();
       
       setSuccess(
