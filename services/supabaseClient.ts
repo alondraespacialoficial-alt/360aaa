@@ -279,35 +279,270 @@ export async function getProvidersWithServices() {
 export async function getProvidersForQuery(options: {
   service_slug?: string;
   city?: string | null;
+  state?: string | null;
   budget?: number | null;
   limit?: number;
 }) {
-  const { service_slug, city, budget, limit = 50 } = options;
+  const { service_slug, city, state, budget, limit = 50 } = options;
   try {
-    // Obtener servicios con las columnas REALES de la tabla
-    let query = supabase.from('provider_services').select(`
-      id,
-      provider_id,
-      name,
-      price,
-      description,
-      providers(id, name, city, is_premium, is_active)
-    `);
-
-    // Note: La tabla NO tiene service_slug ni category_id
-    // Filtramos por nombre o descripción si es necesario
-
-    // Limitar resultados y sólo proveedores activos (join condition)
-    const { data: servicesData, error: servicesError } = await query.limit(limit);
-    if (servicesError) {
-      console.error('Error fetching services for query:', servicesError);
+    console.log('🔍 getProvidersForQuery called with:', { service_slug, city, state, budget, limit });
+    
+    // Primero obtener todos los proveedores activos
+    const { data: providersData, error: providersError } = await supabase
+      .from('providers')
+      .select('*')
+      .eq('is_active', true)
+      .limit(limit);
+      
+    if (providersError) {
+      console.error('❌ Error fetching providers:', providersError);
       return [];
     }
+    
+    if (!providersData || providersData.length === 0) {
+      console.log('⚠️ No providers found in database');
+      return [];
+    }
+    
+    console.log('✅ Found providers:', providersData.length);
+    
+    // Debug: verificar estructura de datos de contacto
+    if (providersData.length > 0) {
+      console.log('📞 Provider data structure sample:', {
+        provider: providersData[0].name,
+        fields: Object.keys(providersData[0]),
+        contact_field: providersData[0].contact,
+        whatsapp_field: providersData[0].whatsapp,
+        phone_field: providersData[0].phone
+      });
+    }
+    
+    // Obtener servicios para estos proveedores con filtrado por tipo
+    let servicesQuery = supabase
+      .from('provider_services')
+      .select('*')
+      .in('provider_id', providersData.map(p => p.id));
+    
+    // Filtrar servicios por categoría si se especifica
+    if (service_slug) {
+      console.log('🎯 Filtering services by type:', service_slug);
+      
+      // Mapeo de service_slug a palabras clave para búsqueda (expandido)
+      const serviceKeywords: Record<string, string[]> = {
+        'video': [
+          // Video profesional
+          'video', 'videografia', 'videografo', 'film', 'filmmaker', 'cinematografia', 'cine',
+          'audiovisual', 'grabacion', 'edicion', 'montaje', 'postproduccion', 'cobertura',
+          // Tipos de video
+          'video boda', 'video evento', 'video corporativo', 'video promocional', 'video musical',
+          'video quinceañera', 'video graduacion', 'video institucional', 'video empresarial',
+          // Servicios específicos
+          'dron', 'drone', 'aereo', 'gimbal', 'camara profesional', 'streaming', 'transmision',
+          'slow motion', 'camara lenta', 'time lapse', 'multicamara',
+          // Paquetes
+          'paquete oro', 'paquete plata', 'paquete empresarial', 'paquete musical', 'paquete basico',
+          'paquete premium', 'paquete completo', 'paquete wedding', 'paquete bodas'
+        ],
+        'photography': [
+          // Fotografía profesional  
+          'foto', 'fotografia', 'fotografo', 'sesion', 'shooting', 'photo', 'pictures',
+          'retrato', 'retratos', 'captura', 'instantanea', 'imagen', 'imagenes',
+          // Tipos de fotografía
+          'foto boda', 'foto evento', 'foto corporativa', 'foto familiar', 'foto quinceañera',
+          'foto graduacion', 'foto infantil', 'foto embarazo', 'foto maternity', 'foto newborn',
+          'foto producto', 'foto comercial', 'foto moda', 'foto retrato', 'foto estudio',
+          // Servicios específicos
+          'sesion fotos', 'book fotografico', 'album', 'photobook', 'impresiones',
+          'fotografia social', 'fotografia de eventos', 'fotografia profesional',
+          'sesion exterior', 'sesion estudio', 'sesion casual', 'sesion formal'
+        ],
+        'music': [
+          // DJs y música
+          'dj', 'disc jockey', 'musica', 'sonido', 'audio', 'sound', 'musico', 'grupo musical',
+          'banda', 'grupo', 'mariachi', 'trio', 'cuarteto', 'orquesta', 'conjunto',
+          // Servicios de audio
+          'sonido profesional', 'equipo sonido', 'microfonos', 'bocinas', 'amplificacion',
+          'mezcladora', 'consola', 'sistema audio', 'karaoke', 'musica en vivo',
+          // Tipos de música
+          'musica boda', 'musica evento', 'musica corporativa', 'musica fiesta',
+          'musica ambiental', 'musica bailar', 'musica ceremonia', 'musica recepcion',
+          // Entretenimiento
+          'entretenimiento', 'animacion', 'show musical', 'espectaculo', 'presentacion',
+          'musical', 'repertorio', 'playlist', 'setlist'
+        ],
+        'sweets': [
+          // Dulces y postres
+          'dulce', 'dulces', 'candy', 'golosinas', 'confiteria', 'reposteria', 'pasteleria',
+          'postre', 'postres', 'dessert', 'sweet', 'azucar', 'chocolate', 'caramelo',
+          // Tipos específicos
+          'pastel', 'cake', 'torta', 'cupcake', 'muffin', 'dona', 'galleta', 'cookie',
+          'brownie', 'cheesecake', 'flan', 'gelatina', 'mousse', 'tiramisu',
+          // Snacks y casual
+          'snacks', 'botana', 'botanas', 'aperitivo', 'paletas', 'helado', 'nieve',
+          'raspado', 'esquites', 'elotes', 'palomitas', 'popcorn', 'churros',
+          // Servicios de barras
+          'barra de snacks', 'barra snacks', 'barra dulces', 'barra postres',
+          'carro de elotes', 'carrito elotes', 'puesto elotes', 'esquites',
+          'palomera', 'maquina palomera', 'barra palomitas', 'mesa dulces',
+          'candy bar', 'sweet table', 'mesa postres',
+          // Variedad
+          'variedad', 'variadas', 'surtido', 'mixto', 'combinado', 'assorted'
+        ],
+        'catering': [
+          // Catering profesional
+          'catering', 'banquete', 'banquetes', 'servicio comida', 'comida eventos',
+          'buffet', 'bufet', 'servicio mesa', 'cocina', 'chef', 'cocinero',
+          // Tipos de comida
+          'comida', 'bebida', 'bebidas', 'alimentos', 'menu', 'platillos', 'platos',
+          'entrada', 'plato fuerte', 'postre catering', 'aperitivos', 'canapes',
+          'cocktail', 'coctel', 'brunch', 'almuerzo', 'cena', 'desayuno',
+          // Servicios
+          'mesero', 'meseros', 'servicio', 'atencion', 'personal', 'staff',
+          'cristaleria', 'vajilla', 'manteleria', 'mobiliario', 'montaje',
+          // Tipos de eventos
+          'catering boda', 'catering corporativo', 'catering social', 'catering empresarial',
+          'catering evento', 'catering fiesta', 'catering graduacion'
+        ],
+        'decoration': [
+          // Decoración general
+          'decoracion', 'decoracion eventos', 'ambientacion', 'ornamentacion',
+          'adorno', 'adornos', 'ornamento', 'ornamentos', 'decorativo',
+          // Elementos específicos
+          'globos', 'globo', 'balloon', 'flores', 'floral', 'arreglo floral',
+          'bouquet', 'ramo', 'centro mesa', 'centros mesa', 'centerpiece',
+          // Materiales y elementos
+          'tela', 'cortinas', 'drapeado', 'luces', 'iluminacion', 'velas',
+          'candelabros', 'jarrones', 'cristal', 'papel', 'fabric', 'satin',
+          // Tipos de decoración
+          'decoracion boda', 'decoracion quinceañera', 'decoracion infantil',
+          'decoracion tematica', 'decoracion elegante', 'decoracion rustica',
+          'decoracion vintage', 'decoracion moderna', 'decoracion clasica',
+          // Servicios
+          'montaje decoracion', 'instalacion', 'diseño decorativo', 'concepto decorativo',
+          'ambientacion eventos', 'decoracion integral', 'styling'
+        ],
+        'transport': [
+          // Transporte general
+          'transporte', 'transportation', 'traslado', 'viaje', 'transfer',
+          'movilidad', 'vehiculo', 'auto', 'carro', 'automovil',
+          // Tipos de vehículos
+          'camion', 'autobus', 'bus', 'van', 'minivan', 'suburban',
+          'limousina', 'limo', 'sedan', 'luxury car', 'auto lujo',
+          'sprinter', 'microbus', 'combi', 'urvan',
+          // Servicios específicos
+          'renta auto', 'renta vehiculo', 'alquiler auto', 'chofer',
+          'conductor', 'driver', 'servicio chofer', 'transporte ejecutivo',
+          'transporte grupo', 'transporte wedding', 'transporte evento',
+          // Servicios modernos
+          'uber', 'taxi', 'ride', 'servicio privado', 'transfer privado',
+          'transporte exclusivo', 'transporte vip'
+        ],
+        'venue': [
+          // Lugares y espacios
+          'salon', 'salones', 'venue', 'lugar', 'espacio', 'local', 'recinto',
+          'instalaciones', 'facilities', 'location', 'site', 'area',
+          // Tipos de venues
+          'salon eventos', 'salon fiestas', 'salon bodas', 'salon recepciones',
+          'salon quinceañera', 'salon graduacion', 'salon corporativo',
+          // Espacios específicos
+          'jardin', 'garden', 'terraza', 'rooftop', 'patio', 'quinta',
+          'hacienda', 'rancho', 'finca', 'casa campo', 'villa',
+          // Lugares comerciales
+          'hotel', 'centro convenciones', 'club', 'restaurant', 'restaurante',
+          'casino', 'museo', 'galeria', 'biblioteca', 'auditorio',
+          // Servicios de renta
+          'renta salon', 'renta espacio', 'renta lugar', 'alquiler salon',
+          'reservacion', 'booking', 'disponibilidad', 'capacidad'
+        ]
+      };
+      
+      const keywords = serviceKeywords[service_slug] || [service_slug];
+      console.log('🔍 Searching for keywords:', keywords);
+      
+      // Construir filtro OR para buscar en name y description
+      const orConditions = keywords.flatMap(keyword => [
+        `name.ilike.%${keyword}%`,
+        `description.ilike.%${keyword}%`
+      ]);
+      
+      servicesQuery = servicesQuery.or(orConditions.join(','));
+    }
+      
+    const { data: servicesData, error: servicesError } = await servicesQuery;
+    
+    // Debug: mostrar qué servicios se encontraron
+    if (service_slug && servicesData) {
+      console.log('🔍 Services found for', service_slug, ':', servicesData.map(s => ({
+        provider_id: s.provider_id,
+        name: s.name,
+        description: s.description
+      })));
+    }
+      
+    if (servicesError) {
+      console.error('❌ Error fetching services:', servicesError);
+    }
+    
+    console.log('✅ Found services:', servicesData?.length || 0);
 
     const services = servicesData || [];
+    const providers = providersData || [];
 
-    // Optionally filter by city and compute provider ids
-    const providerIds = services.map((s: any) => s.provider_id).filter(Boolean);
+    // Si hay filtro de servicio, solo incluir proveedores que tienen ese tipo de servicio
+    let relevantProviderIds: string[] = [];
+    if (service_slug && services.length > 0) {
+      relevantProviderIds = [...new Set(services.map(s => s.provider_id))];
+      console.log('🎯 Providers with relevant services for', service_slug, ':', relevantProviderIds.length);
+      console.log('🔍 Relevant provider IDs:', relevantProviderIds);
+    } else if (service_slug && services.length === 0) {
+      console.log('⚠️ No services found for service_slug:', service_slug);
+      relevantProviderIds = []; // Si busca algo específico pero no hay servicios, no mostrar nada
+    } else {
+      relevantProviderIds = providers.map(p => p.id);
+    }
+
+    // Filtrar proveedores por ubicación Y por servicios relevantes
+    let filteredProviders = providers.filter(p => {
+      // FILTRO ESTRICTO: Si hay service_slug, DEBE estar en relevantProviderIds
+      if (service_slug) {
+        if (!relevantProviderIds.includes(p.id)) {
+          console.log('🚫 EXCLUDING provider', p.name, '(ID:', p.id, ') - NO relevant services for', service_slug);
+          return false;
+        }
+        console.log('✅ INCLUDING provider', p.name, '(ID:', p.id, ') - HAS relevant services for', service_slug);
+      }
+      
+      // Luego filtrar por ubicación si se especifica
+      if (city || state) {
+        // Si especifica ciudad, buscar coincidencia flexible
+        if (city) {
+          const cityMatch = p.city && (
+            p.city.toLowerCase().includes(city.toLowerCase()) ||
+            city.toLowerCase().includes(p.city.toLowerCase()) ||
+            // Casos especiales San Luis Potosí
+            (city.toLowerCase().includes('san luis') && p.city.toLowerCase().includes('san luis'))
+          );
+          if (cityMatch) return true;
+        }
+        
+        // Si especifica estado, buscar coincidencia flexible
+        if (state) {
+          const stateMatch = p.state && (
+            p.state.toLowerCase().includes(state.toLowerCase()) ||
+            state.toLowerCase().includes(p.state.toLowerCase()) ||
+            // Casos especiales San Luis Potosí
+            (state.toLowerCase().includes('san luis') && p.state.toLowerCase().includes('san luis'))
+          );
+          if (stateMatch) return true;
+        }
+        
+        return false;
+      }
+      
+      return true; // Si no hay filtro de ubicación, incluir todos los relevantes
+    });
+    
+    const providerIds = filteredProviders.map(p => p.id);
     
     // Get reviews count and avg rating for these providers
     let reviewsMap: Record<string, { rating: number; reviews_count: number }> = {};
@@ -360,51 +595,76 @@ export async function getProvidersForQuery(options: {
       });
     }
 
-    // Build candidates with computed fields usando columnas REALES
-    const candidates = services
-      .filter((s: any) => {
-        if (!s.providers) return false;
-        // Accept both 'is_active' and legacy 'active' column names
-        return Boolean(s.providers.is_active === true || s.providers.active === true);
-      })
-      .map((s: any) => {
-        const p = s.providers;
+    // Build candidates combinando proveedores y servicios
+    const candidates = filteredProviders.map((p: any) => {
         const reviews = reviewsMap[p.id] || { rating: 0, reviews_count: 0 };
+        const analytics = analyticsMap[p.id] || { views_30d: 0, whatsapp_30d: 0 };
+        const media_count = mediaMap[p.id] || 0;
         
-        // La columna price es numeric, usarla directamente
-        const servicePrice = s.price ? parseFloat(s.price) : null;
+        // Buscar servicios RELEVANTES para este proveedor
+        const providerServices = services.filter(s => s.provider_id === p.id);
+        const relevantService = providerServices[0]; // El más relevante según el filtro
+        
+        // Información del servicio específico o general
+        const serviceInfo = relevantService ? {
+          service_id: relevantService.id,
+          service_name: relevantService.name || 'Servicio especializado',
+          service_description: relevantService.description || p.description,
+          service_price: relevantService.price,
+          service_type: service_slug || 'general'
+        } : {
+          service_id: null,
+          service_name: 'Servicio general',
+          service_description: p.description,
+          service_price: null,
+          service_type: 'general'
+        };
         
         return {
           provider_id: p.id,
           provider_name: p.name,
           city: p.city,
+          state: p.state,
+          description: p.description,
+          is_premium: p.is_premium,
+          is_verified: p.is_verified,
+          
+          // Información de contacto (múltiples formatos posibles)
+          contact: p.contact,
+          whatsapp: p.whatsapp,
+          phone: p.phone,
+          email: p.email,
+          instagram_url: p.instagram_url,
+          facebook_url: p.facebook_url,
+          website_url: p.website_url,
+          
+          // Datos del servicio específico
+          ...serviceInfo,
+          
+          // Métricas calculadas
           rating: reviews.rating,
           reviews_count: reviews.reviews_count,
-          is_premium: p.is_premium || false,
-          service_id: s.id,
-          service_name: s.name || s.description || null, // Columna "name", no "service_name"
-          service_slug: null, // No existe en la tabla
-          service_price_min: servicePrice, // Usar el precio como min
-          service_price_max: servicePrice, // Usar el precio como max (mismo valor)
-          service_median: servicePrice, // El precio es el valor único
-          price_range: servicePrice ? `$${servicePrice}` : null, // Formatear para compatibilidad
-          description: s.description || null,
-          views_30d: analyticsMap[p.id]?.views_30d || 0,
-          whatsapp_30d: analyticsMap[p.id]?.whatsapp_30d || 0,
-          media_count: mediaMap[p.id] || 0
+          views_30d: analytics.views_30d,
+          whatsapp_30d: analytics.whatsapp_30d,
+          media_count: media_count,
+          
+          // Para compatibilidad con ranking
+          service_median: relevantService?.price ? parseFloat(relevantService.price) : null,
         };
+    });
+
+    console.log('🎯 Final candidates by service type:', candidates.length);
+    if (candidates.length > 0) {
+      console.log('📊 Sample candidate:', {
+        name: candidates[0].provider_name,
+        service: candidates[0].service_name,
+        type: candidates[0].service_type
       });
-
-    // Optionally filter by city (normalize for comparison - remove accents and case)
-    const normalizeCity = (str: string) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const filtered = city 
-      ? candidates.filter((c: any) => c.city && normalizeCity(c.city).includes(normalizeCity(city))) 
-      : candidates;
-
-    // If budget given, we can sort by proximity; otherwise keep original order
-    return filtered.slice(0, limit);
+    }
+    
+    return candidates.slice(0, limit);
   } catch (error) {
-    console.error('getProvidersForQuery error:', error);
+    console.error('❌ getProvidersForQuery error:', error);
     return [];
   }
 }
