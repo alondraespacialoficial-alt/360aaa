@@ -133,15 +133,40 @@ Core interfaces in `types.ts`: `ContactDetails`, `Category`, `Supplier`, `Servic
 - `services/supabaseClient.ts`: `getProviderFullDetail()` and DB client
 - `services/aiAssistant.ts`: AI logic, FAQ cache, Gemini integration
 - `context/AIStatusContext.tsx`: AI enable/disable state with Realtime
-- `hooks/useProviderTracking.ts`: Analytics event tracking
-- `components/AIFloatingChat.tsx`: Main AI chat interface
-- `components/AIAdminPanel.tsx`: AI settings toggle for admin
-- `pages/admin/AdminPanel.tsx`: CRUD operations for providers/services
-- `vite.config.ts`: Port 3004, env vars exposed as `process.env.*`
+# Copilot instructions — Charlitron Eventos 360 (consolidado)
 
-## Testing Commands
-```bash
-npm run dev       # Development server
-npm run build     # Production build (check for TypeScript errors)
-npm run preview   # Test production build locally
-```
+Resumen rápido: proyecto React + TypeScript creado con Vite que usa Supabase como backend. Tiene una UI pública y un panel admin, tracking de analytics por proveedor y un asistente AI con control de presupuesto y rate-limits.
+
+Puntos imprescindibles para un agente:
+- Context/envoltorio (ver `App.tsx`): ErrorBoundary > ThemeProvider > AuthProvider > AIStatusProvider > BrowserRouter. Cambios en `ai_settings` se propagan por Realtime.
+- AI: `services/aiAssistant.ts` (lógica de Gemini/FAQ, `FAQ_RESPONSES`, control de tokens/costo). Interfaz: `components/AIFloatingChat.tsx`. Panel admin: `components/AIAdminPanel.tsx`.
+- Bases de datos (Supabase): tablas clave `ai_settings` (fila única), `ai_usage_tracking`, `provider_analytics`, `provider_reviews`, `providers` y relaciones (`provider_categories`). RLS importante: `ai_settings` lectura pública, sólo admin modifica.
+- Tracking: `hooks/useProviderTracking.ts` auto-trackea `profile_view` al montar y expone `trackWhatsAppClick`, `trackPhoneClick`, etc. Los eventos se insertan en `provider_analytics` con metadata (IP, UA, geo).
+- Fetching: usar `getProviderFullDetail(provider_id)` en `services/supabaseClient.ts` para obtener provider + relaciones en una sola llamada.
+- Protecciones de rutas: admin routes usan `layouts/AdminLayout.tsx` y `useAuth()` para redirigir si no hay sesión.
+
+Comandos y configuración de desarrollo (ver `package.json`):
+- npm install
+- Crear `.env.local` con: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_GEMINI_API_KEY` (opcional para AI)
+- npm run dev  # servidor en localhost:3004 (vite config)
+- npm run build / npm run preview
+
+Pequeños ejemplos detectables en el código:
+- Llamada para obtener todo el detalle de un proveedor:
+  `const { provider, services, reviews, media } = await getProviderFullDetail(provider_id)`
+- Tracking manual (desde UI):
+  `const { trackWhatsAppClick } = useProviderTracking(providerId); trackWhatsAppClick(phone)`
+- Desactivar AI rápidamente (SQL):
+  `UPDATE ai_settings SET is_enabled = false;` (ejecutar en Supabase SQL Editor)
+
+Convenciones del repo:
+- Tipos centrales en `types.ts` (`ContactDetails`, `Category`, `Supplier`, `Service`, `ProviderReview`). Null-check obligatorio para campos opcionales.
+- Estilo: paleta morada; dark-mode usa clases `theme-*`. Iconos: Heroicons; categorías prefieren emoji (`components/CategoryIcons.tsx`).
+- Confirmaciones UI para acciones destructivas (ver `pages/admin/*` y patrón `handleDelete`).
+
+Dónde mirar primero cuando se cambia comportamiento AI o tracking:
+- `context/AIStatusContext.tsx` (suscripciones Realtime)
+- `services/aiAssistant.ts` (costo, rate-limits, FAQ)
+- `hooks/useProviderTracking.ts` y `database/provider_analytics_schema.sql`
+
+Si algo no está claro o necesitas más ejemplos concretos (tests, flujos de PR, o scripts de migración SQL), dime qué parte quieres ampliar y lo añado.

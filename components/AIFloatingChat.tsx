@@ -5,6 +5,7 @@ import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
 import { useAuth } from '../context/AuthContext';
 import { useAIStatus } from '../context/AIStatusContext';
 import { supabase } from '../services/supabaseClient';
+import NotifyModal from './NotifyModal';
 
 interface Message {
   id: string;
@@ -25,6 +26,10 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [remainingQuestions, setRemainingQuestions] = useState(5);
   const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null);
+  const [lastAssistantMessageId, setLastAssistantMessageId] = useState<string | null>(null);
+  const [feedbackMap, setFeedbackMap] = useState<Record<string, boolean | null>>({});
+  const [messageUsageMap, setMessageUsageMap] = useState<Record<string, string | null>>({});
+  const [notifyOpenFor, setNotifyOpenFor] = useState<{ open: boolean; city?: string | null }>({ open: false });
   
   const { user } = useAuth();
   const { isAIEnabled } = useAIStatus(); // 🎯 USAR CONTEXTO EN LUGAR DE ESTADO LOCAL
@@ -48,9 +53,21 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
       const userIP = await getUserIP();
       const userIdentifier = user?.id || userIP;
       
-      // Obtener configuración actual
-      const config = await aiAssistant.getAISettings();
-      const dailyLimit = config.rate_limit_per_day;
+      // Obtener configuración actual directamente desde la tabla
+      let dailyLimit = 5;
+      try {
+        const { data: settingsData, error: settingsError } = await supabase
+          .from('ai_settings')
+          .select('rate_limit_per_day')
+          .limit(1)
+          .single();
+
+        if (!settingsError && settingsData && typeof settingsData.rate_limit_per_day === 'number') {
+          dailyLimit = settingsData.rate_limit_per_day;
+        }
+      } catch (err) {
+        console.warn('Could not fetch ai_settings rate limit, using default', err);
+      }
       
       // Obtener uso actual del día
       const { data } = await supabase
@@ -140,7 +157,65 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
     };
     
     setMessages(prev => [...prev, message]);
+    if (!isUser) setLastAssistantMessageId(message.id);
     return message;
+  };
+
+  // Registrar feedback del usuario (útil / no útil)
+  const sendFeedback = async (usageId: string | null, useful: boolean): Promise<boolean> => {
+    try {
+      const userIP = await getUserIP();
+      const userIdentifier = user?.id || userIP;
+
+      // Intentar llamar a la RPC log_ai_feedback si existe
+      try {
+        const rpcParams: any = {
+          p_usage_id: usageId,
+          p_user_id: user?.id || null,
+          p_user_ip: user?.id ? null : userIP,
+          p_feedback: useful,
+        };
+
+        // @ts-ignore - supabase RPC params dynamic
+        const { data, error } = await supabase.rpc('log_ai_feedback', rpcParams);
+        if (error) {
+          // RPC no disponible o falló, caemos al fallback
+          console.warn('log_ai_feedback RPC failed, falling back:', error.message);
+          throw error;
+        }
+
+        return true;
+      } catch (rpcErr) {
+        // Fallback: actualizar la última fila en ai_usage_tracking para este usuario/IP
+        const query = supabase
+          .from('ai_usage_tracking')
+          .select('id')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (user?.id) query.eq('user_id', user.id);
+        else query.eq('user_ip', userIP);
+
+        const { data } = await query;
+        const lastRow = data && Array.isArray(data) && data[0];
+
+        if (lastRow && lastRow.id) {
+          const { error: upErr } = await supabase
+            .from('ai_usage_tracking')
+            .update({ user_feedback: useful })
+            .eq('id', lastRow.id);
+
+          if (upErr) console.warn('Failed to update feedback on ai_usage_tracking:', upErr.message);
+          return true;
+        } else {
+          console.warn('No ai_usage_tracking row found to attach feedback');
+          return false;
+        }
+      }
+    } catch (err) {
+      console.error('Error sending feedback:', err);
+      return false;
+    }
   };
 
   const handleSendMessage = async () => {
@@ -156,10 +231,17 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
 
     try {
       const userIP = await getUserIP();
-      const { response } = await aiAssistant.askQuestion(userMessage, userIP);
-      
-      // Agregar respuesta de la IA
-      addMessage(response, false);
+      const { response, usage } = await aiAssistant.askQuestion(userMessage, userIP);
+
+      // Agregar respuesta de la IA y guardar metadata de uso en estado si es necesario
+      const assistantMsg = addMessage(response, false);
+      if (assistantMsg && usage && (usage as any).id) {
+        const idStr = String((usage as any).id);
+        setMessageUsageMap(prev => ({ ...prev, [assistantMsg.id]: idStr }));
+      }
+      // (intentamos pasar usage.id más adelante si el RPC lo devuelve; por ahora usamos fallback)
+      // guardamos en estado opcional: podríamos almacenar usage.session_id si se requiere
+      // (no expuesto aquí)
       
       // Actualizar contador real desde la base de datos
       await updateRemainingQuestions();
@@ -272,6 +354,84 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
                     }`}>
                       {formatTime(message.timestamp)}
                     </div>
+                    {/* Feedback buttons for assistant messages */}
+                    {!message.isUser && !message.isError && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <button
+                          onClick={async () => {
+                            // Prevent double clicks
+                            if (feedbackMap[message.id] != null) return;
+                            // optimistic UI
+                            setFeedbackMap(prev => ({ ...prev, [message.id]: true }));
+                            const usageId = messageUsageMap[message.id] || null;
+                            const ok = await sendFeedback(usageId, true);
+                            if (!ok) {
+                              // revertir optimistic UI si falla
+                              setFeedbackMap(prev => ({ ...prev, [message.id]: null }));
+                              alert('No se pudo enviar el feedback. Intenta de nuevo.');
+                            }
+                          }}
+                          disabled={feedbackMap[message.id] != null}
+                          className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded-md border border-green-100 hover:bg-green-100 disabled:opacity-50"
+                        >
+                          Útil
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (feedbackMap[message.id] != null) return;
+                            setFeedbackMap(prev => ({ ...prev, [message.id]: false }));
+                            const usageId = messageUsageMap[message.id] || null;
+                            const ok = await sendFeedback(usageId, false);
+                            if (!ok) {
+                              setFeedbackMap(prev => ({ ...prev, [message.id]: null }));
+                              alert('No se pudo enviar el feedback. Intenta de nuevo.');
+                            }
+                          }}
+                          disabled={feedbackMap[message.id] != null}
+                          className="text-xs px-2 py-1 bg-red-50 text-red-700 rounded-md border border-red-100 hover:bg-red-100 disabled:opacity-50"
+                        >
+                          No útil
+                        </button>
+                        {/* Avisarme CTA for no-providers */}
+                        {/** messageUsageMap stores usage id; we may need to fetch usage metadata separately. For convenience, we look up no_providers via messageUsageMap metadata if available. **/}
+                        <button
+                          onClick={() => {
+                            // If we have a usage id, try to fetch the usage row to get the city
+                            const usageId = messageUsageMap[message.id] || null;
+                            if (!usageId) {
+                              // fallback: open modal with no city
+                              setNotifyOpenFor({ open: true, city: null });
+                              return;
+                            }
+
+                            (async () => {
+                              try {
+                                const { data, error } = await supabase
+                                  .from('ai_usage_tracking')
+                                  .select('id, question, response, created_at')
+                                  .eq('id', usageId)
+                                  .limit(1)
+                                  .single();
+
+                                if (error || !data) {
+                                  setNotifyOpenFor({ open: true, city: null });
+                                } else {
+                                  // Try to extract city from response or question heuristically
+                                  const cityMatch = (data.question || data.response || '').match(/in\s+([A-Za-záéíóúñ\s]+)/i) || (data.question || data.response || '').match(/en\s+([A-Za-záéíóúñ\s]+)/i);
+                                  const city = cityMatch ? cityMatch[1].trim() : null;
+                                  setNotifyOpenFor({ open: true, city });
+                                }
+                              } catch (err) {
+                                setNotifyOpenFor({ open: true, city: null });
+                              }
+                            })();
+                          }}
+                          className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-100 hover:bg-blue-100"
+                        >
+                          Avisarme
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -351,6 +511,11 @@ const AIFloatingChat: React.FC<AIFloatingChatProps> = ({ className = '' }) => {
           </div>
         )}
       </div>
+      <NotifyModal open={notifyOpenFor.open} onClose={() => setNotifyOpenFor({ open: false })} city={notifyOpenFor.city} onSuccess={(data:any) => {
+        // enqueue a confirmation message in the chat
+        const text = `¡Hecho! Te avisaremos cuando haya proveedores en ${notifyOpenFor.city || 'esta ciudad'}. Gracias por registrarte.`;
+        addMessage(text, false);
+      }} />
     </>
   );
 };

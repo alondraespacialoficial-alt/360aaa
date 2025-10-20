@@ -275,6 +275,108 @@ export async function getProvidersWithServices() {
   }
 }
 
+// Helper: obtener candidatos por servicio/city/presupuesto
+export async function getProvidersForQuery(options: {
+  service_slug?: string;
+  city?: string | null;
+  budget?: number | null;
+  limit?: number;
+}) {
+  const { service_slug, city, budget, limit = 50 } = options;
+  try {
+    // Buscar servicios que coincidan con el service_slug (si se proporcionó)
+    let query = supabase.from('provider_services').select(`
+      id,
+      provider_id,
+      service_name,
+      service_slug,
+      price_min,
+      price_max,
+      description,
+      providers(id, name, city, rating, reviews_count, is_premium, is_active)
+    `);
+
+    if (service_slug) {
+      query = query.eq('service_slug', service_slug);
+    }
+
+    // Limitar resultados y sólo proveedores activos (join condition)
+    const { data: servicesData, error: servicesError } = await query.limit(limit);
+    if (servicesError) {
+      console.error('Error fetching services for query:', servicesError);
+      return [];
+    }
+
+    const services = servicesData || [];
+
+    // Optionally filter by city and compute provider ids
+    const providerIds = services.map((s: any) => s.provider_id).filter(Boolean);
+
+    // Get analytics counts for these providers (last 30 days)
+    let analyticsMap: Record<string, { views_30d: number; whatsapp_30d: number }> = {};
+    if (providerIds.length > 0) {
+      const { data: analyticsData } = await supabase
+        .from('provider_analytics')
+        .select('provider_id, event_type, created_at')
+        .in('provider_id', providerIds)
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+
+      (analyticsData || []).forEach((ev: any) => {
+        const id = ev.provider_id;
+        if (!analyticsMap[id]) analyticsMap[id] = { views_30d: 0, whatsapp_30d: 0 };
+        if (ev.event_type === 'profile_view') analyticsMap[id].views_30d++;
+        if (ev.event_type === 'whatsapp_click') analyticsMap[id].whatsapp_30d++;
+      });
+    }
+
+    // Media count
+    const mediaMap: Record<string, number> = {};
+    if (providerIds.length > 0) {
+      const { data: mediaData } = await supabase
+        .from('provider_media')
+        .select('provider_id')
+        .in('provider_id', providerIds);
+      (mediaData || []).forEach((m: any) => {
+        mediaMap[m.provider_id] = (mediaMap[m.provider_id] || 0) + 1;
+      });
+    }
+
+    // Build candidates with computed fields
+    const candidates = services
+      .filter((s: any) => s.providers && s.providers.is_active)
+      .map((s: any) => {
+        const p = s.providers;
+        return {
+          provider_id: p.id,
+          provider_name: p.name,
+          city: p.city,
+          rating: p.rating || 0,
+          reviews_count: p.reviews_count || 0,
+          is_premium: p.is_premium || false,
+          service_id: s.id,
+          service_name: s.service_name || s.description || null,
+          service_slug: s.service_slug || null,
+          service_price_min: s.price_min || null,
+          service_price_max: s.price_max || null,
+          service_median: s.price_min && s.price_max ? (s.price_min + s.price_max) / 2 : null,
+          description: s.description || null,
+          views_30d: analyticsMap[p.id]?.views_30d || 0,
+          whatsapp_30d: analyticsMap[p.id]?.whatsapp_30d || 0,
+          media_count: mediaMap[p.id] || 0
+        };
+      });
+
+    // Optionally filter by city
+    const filtered = city ? candidates.filter((c: any) => c.city && c.city.toLowerCase().includes(city.toLowerCase())) : candidates;
+
+    // If budget given, we can sort by proximity; otherwise keep original order
+    return filtered.slice(0, limit);
+  } catch (error) {
+    console.error('getProvidersForQuery error:', error);
+    return [];
+  }
+}
+
 // ==========================================
 // FUNCIONES DE ANALYTICS Y TRACKING
 // ==========================================

@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { getProvidersForQuery } from './supabaseClient';
 
 // Configuración de la IA
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
@@ -43,7 +44,7 @@ const CACHE_DURATION = 30 * 60 * 1000; // 30 minutos
 
 // Preguntas frecuentes con respuestas pre-definidas
 const FAQ_RESPONSES: Record<string, string> = {
-  'hola': '¡Hola! 👋 Bienvenido a Charlitron Eventos 360. Puedo ayudarte a encontrar proveedores de eventos. ¿Qué tipo de servicio necesitas?',
+  'hola': '¡Hola! 👋 Soy tu asistente virtual de Charlitron Eventos 360. ¿En qué puedo ayudarte?',
   'ayuda': 'Puedo ayudarte con: 🔍 Buscar proveedores, ⭐ Ver reseñas y calificaciones, 💰 Comparar precios, 📍 Encontrar proveedores por ubicación. ¿Qué necesitas?',
   'horarios': 'Nuestro directorio está disponible 24/7. Los proveedores tienen sus propios horarios de atención que puedes consultar en sus perfiles.',
   'costo': 'El directorio de Charlitron Eventos 360 es completamente gratuito para usuarios. Los precios de servicios varían por proveedor.',
@@ -53,6 +54,8 @@ const FAQ_RESPONSES: Record<string, string> = {
 class AIAssistantService {
   private sessionId: string;
   private conversationHistory: Array<{ role: string; content: string }> = [];
+  // pending clarification stored between turns for this session
+  private pendingClarification: { originalQuestion: string; askedCity: boolean; askedBudget: boolean } | null = null;
 
   constructor() {
     this.sessionId = this.generateSessionId();
@@ -309,12 +312,53 @@ Puedo ayudarte con:
     }
   }
 
+  // Rank providers deterministically using signals
+  private rankProviders(candidates: any[], userBudget?: number, userCity?: string) {
+    if (!candidates || candidates.length === 0) return [];
+
+    const maxReviews = Math.max(...candidates.map(c => c.reviews_count || 0), 1);
+    const maxViews = Math.max(...candidates.map(c => c.views_30d || 0), 1);
+    const maxWhatsapp = Math.max(...candidates.map(c => c.whatsapp_30d || 0), 1);
+    const maxMedia = Math.max(...candidates.map(c => c.media_count || 0), 1);
+
+    function normalizeLog(value: number, max: number) {
+      return Math.log(1 + value) / Math.log(1 + Math.max(1, max));
+    }
+
+    const scored = candidates.map(c => {
+      const service_match = 1; // already filtered by service
+      const city_match = userCity && c.city ? (c.city.toLowerCase().includes(userCity.toLowerCase()) ? 1 : 0) : 0;
+      const price_proximity = (userBudget && c.service_median) ? (1 - Math.min(Math.abs(c.service_median - userBudget) / Math.max(userBudget, 1), 1)) : 0.5;
+      const rating_norm = (c.rating || 0) / 5;
+      const reviews_norm = normalizeLog(c.reviews_count || 0, maxReviews);
+      const views_norm = normalizeLog(c.views_30d || 0, maxViews);
+      const whatsapp_norm = normalizeLog(c.whatsapp_30d || 0, maxWhatsapp);
+      const media_norm = normalizeLog(c.media_count || 0, maxMedia);
+      const premium_bonus = c.is_premium ? 0.03 : 0;
+
+      const score =
+        0.35 * service_match +
+        0.20 * city_match +
+        0.15 * price_proximity +
+        0.10 * rating_norm +
+        0.06 * reviews_norm +
+        0.06 * views_norm +
+        0.05 * whatsapp_norm +
+        0.03 * media_norm +
+        premium_bonus;
+
+      return { ...c, score };
+    });
+
+    return scored.sort((a, b) => b.score - a.score);
+  }
+
   private async callGeminiAPI(prompt: string, context: string): Promise<{ response: string; tokensUsed: { input: number; output: number } }> {
     if (!GEMINI_API_KEY) {
       throw new Error('GEMINI_API_KEY no configurada');
     }
 
-    // Detectar si la pregunta incluye presupuesto, ubicación y categoría
+  // Detectar si la pregunta incluye presupuesto, ubicación y categoría
     const hasBudget = /\$\d+|\d+\s*(pesos?|mx|mxn|mil|miles)/i.test(prompt);
     const hasLocation = /en\s+[\w\s]+|de\s+[\w\s]+|potosí|guadalajara|cdmx|méxico|monterrey/i.test(prompt);
     const hasCategory = /(video|fotograf|music|dj|banquet|catering|decorac|pastel|flores|sonido)/i.test(prompt);
@@ -332,7 +376,10 @@ Puedo ayudarte con:
       specificInstructions = '\n\nESPECIAL: El usuario pregunta por una ubicación específica. Filtra solo proveedores de esa ciudad.';
     }
 
-    const fullPrompt = `${context}\n\nPREGUNTA DEL USUARIO: ${prompt}${specificInstructions}\n\nResponde de manera útil, amigable y específica usando la información del contexto. Máximo 300 caracteres.`;
+    // Refuerzo anti-hallucination: instrucciones globales que se agregan al prompt
+    const antiHallucination = `\n\nIMPORTANTE: SOLO usa los proveedores listados en la sección PROVEEDORES CANDIDATOS (TOP K) incluida más abajo. NO inventes nombres, empresas ni datos. Si no hay proveedores apropiados en TOP K, responde: "No tenemos proveedores verificados en esa ciudad/rango" y ofrece alternativas (buscar en ciudades cercanas o contactar soporte).`;
+
+  const fullPrompt = `${context}\n\nPREGUNTA DEL USUARIO: ${prompt}${specificInstructions}${antiHallucination}\n\nResponde de manera útil, amigable y específica usando la información del contexto. Máximo 300 caracteres.`;
 
     const requestBody = {
       contents: [{
@@ -408,9 +455,9 @@ Puedo ayudarte con:
     return inputCost + outputCost;
   }
 
-  private async logUsage(usage: Omit<AIUsage, 'cost_usd'> & { cost_usd?: number }): Promise<void> {
+  private async logUsage(usage: Omit<AIUsage, 'cost_usd'> & { cost_usd?: number; sources_used?: any; ranking_scores?: any }): Promise<string | null> {
     try {
-      await supabase.rpc('log_ai_usage', {
+      const { data, error } = await supabase.rpc('log_ai_usage', {
         p_session_id: usage.session_id,
         p_user_ip: usage.user_ip,
         p_user_id: usage.user_id || null,
@@ -419,10 +466,57 @@ Puedo ayudarte con:
         p_tokens_input: usage.tokens_input,
         p_tokens_output: usage.tokens_output,
         p_cost_usd: usage.cost_usd || 0,
-        p_processing_time_ms: usage.processing_time_ms
+        p_processing_time_ms: usage.processing_time_ms,
+        p_sources_used: (usage as any).sources_used || null,
+        p_ranking_scores: (usage as any).ranking_scores || null
       });
+
+      if (error) {
+        console.error('Error logging AI usage:', error);
+        return null;
+      }
+
+      // rpc returns the uuid of the inserted row
+      if (data && (Array.isArray(data) ? data[0] : data)) {
+        const row = Array.isArray(data) ? data[0] : data;
+        // depending on supabase client, RPC may return { log_ai_usage: '<uuid>' } or direct uuid
+        if (row.id) return row.id;
+        if (row.log_ai_usage) return row.log_ai_usage;
+        // if RPC returned bare uuid
+        if (typeof row === 'string') return row;
+      }
+
+      return null;
     } catch (error) {
       console.error('Error logging AI usage:', error);
+      // Fallback: try direct insert into ai_usage_tracking in case RPC signature mismatch or overload
+      try {
+        const insertObj: any = {
+          session_id: usage.session_id,
+          user_ip: usage.user_ip,
+          user_id: usage.user_id || null,
+          question: usage.question,
+          response: usage.response,
+          tokens_input: usage.tokens_input || 0,
+          tokens_output: usage.tokens_output || 0,
+          cost_usd: usage.cost_usd || 0,
+          processing_time_ms: usage.processing_time_ms || 0,
+          created_at: new Date().toISOString(),
+        };
+        if ((usage as any).sources_used) insertObj.sources_used = (usage as any).sources_used;
+        if ((usage as any).ranking_scores) insertObj.ranking_scores = (usage as any).ranking_scores;
+
+        const { data: inserted, error: insertErr } = await supabase.from('ai_usage_tracking').insert(insertObj).select('id').limit(1);
+        if (insertErr) {
+          console.error('Fallback insert into ai_usage_tracking failed:', insertErr);
+          return null;
+        }
+        if (inserted && Array.isArray(inserted) && inserted[0] && inserted[0].id) return inserted[0].id;
+        if (inserted && inserted.id) return inserted.id as string;
+      } catch (innerErr) {
+        console.error('Fallback logging also failed:', innerErr);
+      }
+      return null;
     }
   }
 
@@ -471,8 +565,8 @@ Puedo ayudarte con:
           cost_usd: 0,
           processing_time_ms: Date.now() - startTime
         };
-        
-        await this.logUsage(usage);
+        const inserted = await this.logUsage(usage as any);
+        (usage as any).id = inserted || null;
         return { response: cachedResponse, usage };
       }
 
@@ -492,8 +586,8 @@ Puedo ayudarte con:
           cost_usd: 0,
           processing_time_ms: Date.now() - startTime
         };
-        
-        await this.logUsage(usage);
+        const inserted = await this.logUsage(usage as any);
+        (usage as any).id = inserted || null;
         return { response: faqResponse, usage };
       }
 
@@ -505,52 +599,259 @@ Puedo ayudarte con:
       // 6. Construir contexto dinámico
       const context = await this.buildDynamicContext();
 
-      // 7. Llamar a Gemini API
-      const { response, tokensUsed } = await this.callGeminiAPI(question, context);
-      
-      // 8. Calcular costo
-      const cost = this.calculateCost(tokensUsed.input, tokensUsed.output);
-
-      // 9. Agregar al cache
-      this.addToCache(question, response);
-
-      // 10. Registrar uso
-      const usage: AIUsage = {
-        session_id: this.sessionId,
-        user_ip: userIP,
-        user_id: userId,
-        question,
-        response,
-        tokens_input: tokensUsed.input,
-        tokens_output: tokensUsed.output,
-        cost_usd: cost,
-        processing_time_ms: Date.now() - startTime
+  // 6.1 Obtener candidatos relevantes (servicio, ciudad y presupuesto detectados desde la pregunta)
+      // Extraemos heurísticamente service_slug, city y budget del texto de la pregunta
+      const detectService = (q: string) => {
+        if (/(video|vide|film)/i.test(q)) return 'video';
+        if (/(foto|fotograf)/i.test(q)) return 'photo';
+        if (/(dj|música|musica|sonido)/i.test(q)) return 'music';
+        return 'general';
+      };
+      const detectCity = (q: string) => {
+        const match = q.match(/en\s+([A-Za-záéíóúñ\s]+)/i);
+        return match ? match[1].trim() : undefined;
+      };
+      const detectBudget = (q: string) => {
+        const m = q.match(/\$?\s?(\d{3,7})/);
+        return m ? Number(m[1]) : undefined;
       };
 
-      await this.logUsage(usage);
+      // If we have a pending clarification from a previous turn, try to interpret this short
+      // user reply as the missing info (city and/or budget) and merge with the original question.
+      let service_slug = detectService(question);
+      let city = detectCity(question);
+      let budget = detectBudget(question);
 
-      return { response, usage };
+      if (this.pendingClarification) {
+        // If the current message looks like an answer (short and contains city/budget), merge it
+        const looksLikeBudget = !!budget;
+        const looksLikeCity = !!city;
 
-    } catch (error: any) {
-      console.error('AI Assistant error:', error);
+        // If current message does not contain either but is short, try to parse according to what was asked
+        if (!looksLikeBudget && !looksLikeCity) {
+          const text = question.trim();
+          // numeric-only answer likely budget
+          const numericOnly = /^\$?\s?\d{2,7}$/.test(text);
+          if (numericOnly && this.pendingClarification.askedBudget) {
+            budget = detectBudget(text);
+          } else if (this.pendingClarification.askedCity) {
+            // treat as city name
+            city = text;
+          }
+        }
+
+        // Merge service from original if not present in this short reply
+        const origService = detectService(this.pendingClarification.originalQuestion);
+        if (!service_slug && origService) service_slug = origService;
+
+        // Use original question as the base
+        question = this.pendingClarification.originalQuestion + ' ' + question;
+
+        // Clear pending once we've consumed it
+        this.pendingClarification = null;
+      }
+
+      // Si faltan datos críticos (ciudad o presupuesto), pedimos clarificación antes de llamar al modelo
+      const needsCity = !city;
+      const needsBudget = !budget;
+
+      if (needsCity || needsBudget) {
+        const clarifications: string[] = [];
+        if (needsCity) clarifications.push('¿En qué ciudad estás?');
+        if (needsBudget) clarifications.push('¿Cuál es tu presupuesto aproximado para el servicio?');
+
+        const clarificationText = `Antes de recomendar proveedores, necesito un par de datos: ${clarifications.join(' ')}`;
+
+        // Store pending clarification so next short user reply can be merged
+        this.pendingClarification = {
+          originalQuestion: question,
+          askedCity: needsCity,
+          askedBudget: needsBudget
+        };
+
+        const usage: AIUsage = {
+          session_id: this.sessionId,
+          user_ip: userIP,
+          user_id: userId,
+          question,
+          response: clarificationText,
+          tokens_input: 0,
+          tokens_output: 0,
+          cost_usd: 0,
+          processing_time_ms: Date.now() - startTime
+        };
+
+        // NOTA: no registramos clarificaciones en la tabla de uso para evitar consumir
+        // el límite de preguntas del usuario con interacciones de clarificación.
+        // Esto evita loops donde cada aclaración cuenta contra la cuota.
+        (usage as any).id = null;
+        return { response: clarificationText, usage };
+      }
+
+      let candidates: any[] = [];
+      try {
+        candidates = await getProvidersForQuery({ service_slug, city, budget, limit: 50 });
+      } catch (err) {
+        console.warn('No se pudieron obtener candidatos:', err);
+        candidates = [];
+      }
+
+      // 6.2 Rankear candidatos y tomar topK
+      const ranked = this.rankProviders(candidates, budget, city);
+      const topK = ranked.slice(0, 3);
+
+      // Si no hay candidatos después del ranking, devolver respuesta controlada sin llamar al modelo
+      if (!topK || topK.length === 0) {
+        const noProvidersMsg = city
+          ? `No tenemos proveedores verificados en ${city}. Puedes intentar buscar en ciudades cercanas o dejar tu contacto para que te avisemos cuando haya proveedores disponibles.`
+          : `No tenemos proveedores verificados para esa búsqueda. ¿Puedes especificar la ciudad o probar otra categoría?`;
+
+        const usageNo: AIUsage = {
+          session_id: this.sessionId,
+          user_ip: userIP,
+          user_id: userId,
+          question,
+          response: noProvidersMsg,
+          tokens_input: 0,
+          tokens_output: 0,
+          cost_usd: 0,
+          processing_time_ms: Date.now() - startTime
+        };
+
+        try {
+          (usageNo as any).sources_used = [];
+          (usageNo as any).ranking_scores = [];
+        } catch (err) {
+          // noop
+        }
+
+        // Mark that this usage was a "no providers" answer so frontend can show a CTA
+        (usageNo as any).no_providers = true;
+        // Include detected city so frontend can prefill notify modal
+        (usageNo as any).city = city || null;
+
+        const insertedIdNo = await this.logUsage(usageNo as any);
+        (usageNo as any).id = insertedIdNo || null;
+        return { response: noProvidersMsg, usage: usageNo };
+      }
+
+      // 6.3 Construir contexto JSON reducido con topK para pasar al modelo
+      const contextJSON = topK.map(p => ({
+        id: p.provider_id,
+        provider_name: p.provider_name,
+        city: p.city,
+        service_id: p.service_id,
+        service_name: p.service_name,
+        price_range: p.service_price_min && p.service_price_max ? `${p.service_price_min}-${p.service_price_max}` : null,
+        rating: p.rating,
+        reviews_count: p.reviews_count,
+        views_30d: p.views_30d,
+        whatsapp_30d: p.whatsapp_30d,
+        media_count: p.media_count,
+        profile_url: `/proveedores/${p.provider_id}`
+      }));
+
+    const enrichedContext = context + '\n\nPROVEEDORES CANDIDATOS (TOP ' + topK.length + '):\n' + JSON.stringify(contextJSON, null, 2);
+
+      // If topK has 1 or 2 providers, return a concise structured response immediately (save tokens)
+          if (topK.length > 0 && topK.length <= 2) {
+            const lines: string[] = [];
+            lines.push(`En ${city || 'tu ciudad'} hay ${topK.length} proveedor${topK.length > 1 ? 'es' : ''} verificado${topK.length > 1 ? 's' : ''}:`);
+
+            topK.forEach((p, idx) => {
+              const name = p.provider_name || 'Proveedor';
+              const price = p.price_range || (p.service_price_min && p.service_price_max ? `${p.service_price_min}-${p.service_price_max}` : 'Rango no disponible');
+              const rating = p.rating ? `${p.rating}⭐` : null;
+              const reason = rating ? `${rating}` : `score:${(p.score || 0).toFixed(2)}`;
+              const profile = p.profile_url || `/proveedores/${p.provider_id}`;
+              lines.push(`${idx + 1}) ${name} — ${price} — ${reason}. ${profile}`);
+            });
+
+            lines.push('¿Quieres que te pase el contacto de alguno?');
+            const conciseResponse = lines.join(' ');
+
+            // log usage with minimal token accounting
+            const usage: AIUsage = {
+              session_id: this.sessionId,
+              user_ip: userIP,
+              user_id: userId,
+              question,
+              response: conciseResponse,
+              tokens_input: 0,
+              tokens_output: 0,
+              cost_usd: 0,
+              processing_time_ms: Date.now() - startTime
+            };
+
+            try {
+              (usage as any).sources_used = topK.map(p => ({ provider_id: p.provider_id, service_id: p.service_id }));
+              (usage as any).ranking_scores = topK.map(p => ({ provider_id: p.provider_id, score: p.score }));
+            } catch (err) {
+              console.warn('Error preparando metadata para logging:', err);
+            }
+
+            // cache the concise answer (optional)
+            this.addToCache(question, conciseResponse);
+
+            const insertedId = await this.logUsage(usage as any);
+            (usage as any).id = insertedId || null;
+            return { response: conciseResponse, usage };
+          }
+
+          // 7. Llamar a Gemini API con contexto enriquecido (fallback cuando topK tiene >=3)
+          const geminiResult = await this.callGeminiAPI(question, enrichedContext);
+
+          // 8. Calcular costo
+          const cost = this.calculateCost(geminiResult.tokensUsed.input, geminiResult.tokensUsed.output);
+
+          // 9. Agregar al cache
+          this.addToCache(question, geminiResult.response);
+
+          // 10. Registrar uso (intentamos adjuntar sources_used y ranking_scores)
+          const usageFull: AIUsage = {
+            session_id: this.sessionId,
+            user_ip: userIP,
+            user_id: userId,
+            question,
+            response: geminiResult.response,
+            tokens_input: geminiResult.tokensUsed.input,
+            tokens_output: geminiResult.tokensUsed.output,
+            cost_usd: cost,
+            processing_time_ms: Date.now() - startTime
+          };
+
+          try {
+            // Si topK existe, añadimos metadata al log (tratamos en logUsage)
+            (usageFull as any).sources_used = topK.map(p => ({ provider_id: p.provider_id, service_id: p.service_id }));
+            (usageFull as any).ranking_scores = topK.map(p => ({ provider_id: p.provider_id, score: p.score }));
+          } catch (err) {
+            console.warn('Error preparando metadata para logging:', err);
+          }
+
+          const insertedFullId = await this.logUsage(usageFull as any);
+          (usageFull as any).id = insertedFullId || null;
+
+          return { response: usageFull.response, usage: usageFull };
+      } catch (error: any) {
+        console.error('AI Assistant error:', error);
       
-      // Registrar error también
-      const errorUsage: AIUsage = {
-        session_id: this.sessionId,
-        user_ip: userIP,
-        user_id: userId,
-        question,
-        response: `Error: ${error.message}`,
-        tokens_input: 0,
-        tokens_output: 0,
-        cost_usd: 0,
-        processing_time_ms: Date.now() - startTime
-      };
+        // Registrar error también
+        const errorUsage: AIUsage = {
+          session_id: this.sessionId,
+          user_ip: userIP,
+          user_id: userId,
+          question,
+          response: `Error: ${error.message}`,
+          tokens_input: 0,
+          tokens_output: 0,
+          cost_usd: 0,
+          processing_time_ms: Date.now() - startTime
+        };
       
-      await this.logUsage(errorUsage);
+        await this.logUsage(errorUsage);
 
-      throw error;
-    }
+        throw error;
+      }
   }
 
   getWelcomeMessage(): string {
@@ -564,11 +865,33 @@ export const aiAssistant = new AIAssistantService();
 // Funciones para admin
 export async function getAIStats(period: 'today' | 'week' | 'month' = 'today') {
   try {
-    const { data, error } = await supabase.rpc('get_ai_stats', { p_period: period });
+    // Calcular fecha de inicio según el período
+    let startDate: Date;
+    const now = new Date();
+    
+    switch (period) {
+      case 'today':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case 'week':
+        const dayOfWeek = now.getDay();
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+
+    // Query directa a la tabla (sin RPC)
+    const { data, error } = await supabase
+      .from('ai_usage_tracking')
+      .select('*')
+      .gte('created_at', startDate.toISOString());
     
     if (error) {
-      console.error('Error calling get_ai_stats RPC:', error);
-      // Devolver estructura por defecto en caso de error
+      console.error('Error querying ai_usage_tracking:', error);
       return {
         period: period,
         total_questions: 0,
@@ -580,27 +903,53 @@ export async function getAIStats(period: 'today' | 'week' | 'month' = 'today') {
         top_questions: []
       };
     }
+
+    // Calcular estadísticas manualmente
+    const total_questions = data?.length || 0;
+    const total_cost_usd = data?.reduce((sum, row) => sum + (row.cost_usd || 0), 0) || 0;
+    const avg_processing_time_ms = total_questions > 0 
+      ? data.reduce((sum, row) => sum + (row.processing_time_ms || 0), 0) / total_questions 
+      : 0;
+    const total_tokens_input = data?.reduce((sum, row) => sum + (row.tokens_input || 0), 0) || 0;
+    const total_tokens_output = data?.reduce((sum, row) => sum + (row.tokens_output || 0), 0) || 0;
     
-    // Validar que data no sea null
-    if (!data) {
-      console.warn('get_ai_stats returned null data');
-      return {
-        period: period,
-        total_questions: 0,
-        total_cost_usd: 0,
-        avg_processing_time_ms: 0,
-        total_tokens_input: 0,
-        total_tokens_output: 0,
-        unique_users: 0,
-        top_questions: []
-      };
-    }
+    // Contar usuarios únicos
+    const uniqueIdentifiers = new Set();
+    data?.forEach(row => {
+      const identifier = row.user_id || row.user_ip;
+      if (identifier) uniqueIdentifiers.add(identifier);
+    });
+    const unique_users = uniqueIdentifiers.size;
+
+    // Top preguntas
+    const questionCounts: Record<string, number> = {};
+    data?.forEach(row => {
+      if (row.question) {
+        questionCounts[row.question] = (questionCounts[row.question] || 0) + 1;
+      }
+    });
     
-    console.log(`AI Stats for ${period}:`, data);
-    return data;
+    const top_questions = Object.entries(questionCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([question, count]) => ({ question_text: question, frequency: count }));
+
+    const result = {
+      period,
+      total_questions,
+      total_cost_usd: parseFloat(total_cost_usd.toFixed(4)),
+      avg_processing_time_ms: Math.round(avg_processing_time_ms),
+      total_tokens_input,
+      total_tokens_output,
+      unique_users,
+      top_questions
+    };
+
+    console.log(`✅ AI Stats for ${period}:`, result);
+    return result;
+    
   } catch (error) {
     console.error('Error getting AI stats:', error);
-    // Devolver estructura por defecto en caso de error
     return {
       period: period,
       total_questions: 0,
