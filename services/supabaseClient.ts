@@ -284,19 +284,18 @@ export async function getProvidersForQuery(options: {
 }) {
   const { service_slug, city, budget, limit = 50 } = options;
   try {
-    // Buscar servicios que coincidan con el service_slug (si se proporcionó)
+    // Obtener servicios con las columnas REALES de la tabla
     let query = supabase.from('provider_services').select(`
       id,
       provider_id,
-      service_name,
-      price_range,
+      name,
+      price,
       description,
-      category_id,
       providers(id, name, city, is_premium, is_active)
     `);
 
-    // Note: No podemos filtrar por service_slug porque esa columna no existe
-    // Filtramos por category_id si tenemos el slug del servicio
+    // Note: La tabla NO tiene service_slug ni category_id
+    // Filtramos por nombre o descripción si es necesario
 
     // Limitar resultados y sólo proveedores activos (join condition)
     const { data: servicesData, error: servicesError } = await query.limit(limit);
@@ -361,23 +360,15 @@ export async function getProvidersForQuery(options: {
       });
     }
 
-    // Build candidates with computed fields
+    // Build candidates with computed fields usando columnas REALES
     const candidates = services
       .filter((s: any) => s.providers && s.providers.is_active)
       .map((s: any) => {
         const p = s.providers;
         const reviews = reviewsMap[p.id] || { rating: 0, reviews_count: 0 };
         
-        // Parse price_range if exists (format: "$1000-$5000" o similar)
-        let price_min = null;
-        let price_max = null;
-        if (s.price_range) {
-          const matches = s.price_range.match(/\$?(\d+)\s*-\s*\$?(\d+)/);
-          if (matches) {
-            price_min = parseInt(matches[1]);
-            price_max = parseInt(matches[2]);
-          }
-        }
+        // La columna price es numeric, usarla directamente
+        const servicePrice = s.price ? parseFloat(s.price) : null;
         
         return {
           provider_id: p.id,
@@ -387,12 +378,12 @@ export async function getProvidersForQuery(options: {
           reviews_count: reviews.reviews_count,
           is_premium: p.is_premium || false,
           service_id: s.id,
-          service_name: s.service_name || s.description || null,
+          service_name: s.name || s.description || null, // Columna "name", no "service_name"
           service_slug: null, // No existe en la tabla
-          service_price_min: price_min,
-          service_price_max: price_max,
-          service_median: price_min && price_max ? (price_min + price_max) / 2 : null,
-          price_range: s.price_range || null,
+          service_price_min: servicePrice, // Usar el precio como min
+          service_price_max: servicePrice, // Usar el precio como max (mismo valor)
+          service_median: servicePrice, // El precio es el valor único
+          price_range: servicePrice ? `$${servicePrice}` : null, // Formatear para compatibilidad
           description: s.description || null,
           views_30d: analyticsMap[p.id]?.views_30d || 0,
           whatsapp_30d: analyticsMap[p.id]?.whatsapp_30d || 0,
