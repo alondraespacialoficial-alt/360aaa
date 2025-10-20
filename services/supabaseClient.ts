@@ -362,7 +362,11 @@ export async function getProvidersForQuery(options: {
 
     // Build candidates with computed fields usando columnas REALES
     const candidates = services
-      .filter((s: any) => s.providers && s.providers.is_active)
+      .filter((s: any) => {
+        if (!s.providers) return false;
+        // Accept both 'is_active' and legacy 'active' column names
+        return Boolean(s.providers.is_active === true || s.providers.active === true);
+      })
       .map((s: any) => {
         const p = s.providers;
         const reviews = reviewsMap[p.id] || { rating: 0, reviews_count: 0 };
