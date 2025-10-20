@@ -608,11 +608,38 @@ Puedo ayudarte con:
         return 'general';
       };
       const detectCity = (q: string) => {
-        const match = q.match(/en\s+([A-Za-záéíóúñ\s]+)/i);
-        return match ? match[1].trim() : undefined;
+        const lowerQ = q.toLowerCase();
+        // Lista de ciudades mexicanas comunes
+        const cities = [
+          'guadalajara', 'cdmx', 'monterrey', 'puebla', 'tijuana', 'león', 'leon', 'juárez', 'juarez',
+          'zapopan', 'querétaro', 'queretaro', 'mérida', 'merida', 'san luis potosí', 'san luis potosi', 'slp',
+          'aguascalientes', 'morelia', 'toluca', 'saltillo', 'hermosillo', 'mexicali', 
+          'culiacán', 'culiacan', 'cancún', 'cancun', 'veracruz', 'acapulco', 'chihuahua', 'oaxaca', 'tampico', 
+          'mazatlán', 'mazatlan', 'cuernavaca', 'xalapa', 'tuxtla', 'durango', 'zacatecas', 'colima',
+          'tepic', 'ciudad de méxico', 'ciudad de mexico', 'mexico', 'guanajuato', 'pachuca', 'tlaxcala'
+        ];
+        
+        for (const city of cities) {
+          if (lowerQ.includes(city)) {
+            // Normalize common variations - return WITHOUT accents to match DB
+            if (city === 'san luis potosi' || city === 'san luis potosí' || city === 'slp') return 'San Luis Potosi';
+            if (city === 'cdmx' || city === 'ciudad de méxico' || city === 'ciudad de mexico' || city === 'mexico') return 'CDMX';
+            if (city === 'león' || city === 'leon') return 'Leon';
+            if (city === 'querétaro' || city === 'queretaro') return 'Queretaro';
+            if (city === 'mérida' || city === 'merida') return 'Merida';
+            if (city === 'juárez' || city === 'juarez') return 'Juarez';
+            if (city === 'culiacán' || city === 'culiacan') return 'Culiacan';
+            if (city === 'cancún' || city === 'cancun') return 'Cancun';
+            if (city === 'mazatlán' || city === 'mazatlan') return 'Mazatlan';
+            // Return capitalized without accents
+            return city.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          }
+        }
+        return undefined;
       };
       const detectBudget = (q: string) => {
-        const m = q.match(/\$?\s?(\d{3,7})/);
+        // Match numbers of 3-7 digits (e.g., 5000, 10000)
+        const m = q.match(/\$?\s?(\d{3,7})(?:\s|$|,|\.)/);
         return m ? Number(m[1]) : undefined;
       };
 
@@ -631,12 +658,15 @@ Puedo ayudarte con:
         if (!looksLikeBudget && !looksLikeCity) {
           const text = question.trim();
           // numeric-only answer likely budget
-          const numericOnly = /^\$?\s?\d{2,7}$/.test(text);
+          const numericOnly = /^\$?\s?\d{3,7}\s*$/.test(text);
           if (numericOnly && this.pendingClarification.askedBudget) {
-            budget = detectBudget(text);
+            budget = Number(text.replace(/[^\d]/g, ''));
           } else if (this.pendingClarification.askedCity) {
-            // treat as city name
-            city = text;
+            // Use the same detectCity logic to extract city from short answer
+            const detectedCity = detectCity(text);
+            if (detectedCity) {
+              city = detectedCity;
+            }
           }
         }
 
@@ -645,10 +675,26 @@ Puedo ayudarte con:
         if (!service_slug && origService) service_slug = origService;
 
         // Use original question as the base
-        question = this.pendingClarification.originalQuestion + ' ' + question;
+        const mergedQuestion = this.pendingClarification.originalQuestion + ' ' + question;
+        
+        // Re-detect city and budget from merged question in case they're now present
+        if (!city) city = detectCity(mergedQuestion);
+        if (!budget) budget = detectBudget(mergedQuestion);
+        
+        question = mergedQuestion;
 
-        // Clear pending once we've consumed it
-        this.pendingClarification = null;
+        // Only clear pending if we now have both city AND budget (or question doesn't need them)
+        // If we still need data, keep asking
+        const stillNeedsCity = this.pendingClarification.askedCity && !city;
+        const stillNeedsBudget = this.pendingClarification.askedBudget && !budget;
+        
+        if (!stillNeedsCity && !stillNeedsBudget) {
+          this.pendingClarification = null;
+        } else {
+          // Update what we still need
+          this.pendingClarification.askedCity = stillNeedsCity;
+          this.pendingClarification.askedBudget = stillNeedsBudget;
+        }
       }
 
       // Si faltan datos críticos (ciudad o presupuesto), pedimos clarificación antes de llamar al modelo
@@ -660,14 +706,17 @@ Puedo ayudarte con:
         if (needsCity) clarifications.push('¿En qué ciudad estás?');
         if (needsBudget) clarifications.push('¿Cuál es tu presupuesto aproximado para el servicio?');
 
-        const clarificationText = `Antes de recomendar proveedores, necesito un par de datos: ${clarifications.join(' ')}`;
+        const clarificationText = `Antes de recomendar proveedores, necesito: ${clarifications.join(' ')}`;
 
         // Store pending clarification so next short user reply can be merged
-        this.pendingClarification = {
-          originalQuestion: question,
-          askedCity: needsCity,
-          askedBudget: needsBudget
-        };
+        // Only update if we don't already have one (avoid overriding mid-conversation)
+        if (!this.pendingClarification) {
+          this.pendingClarification = {
+            originalQuestion: question,
+            askedCity: needsCity,
+            askedBudget: needsBudget
+          };
+        }
 
         const usage: AIUsage = {
           session_id: this.sessionId,

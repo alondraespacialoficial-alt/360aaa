@@ -293,7 +293,7 @@ export async function getProvidersForQuery(options: {
       price_min,
       price_max,
       description,
-      providers(id, name, city, rating, reviews_count, is_premium, is_active)
+      providers(id, name, city, is_premium, is_active)
     `);
 
     if (service_slug) {
@@ -311,6 +311,28 @@ export async function getProvidersForQuery(options: {
 
     // Optionally filter by city and compute provider ids
     const providerIds = services.map((s: any) => s.provider_id).filter(Boolean);
+    
+    // Get reviews count and avg rating for these providers
+    let reviewsMap: Record<string, { rating: number; reviews_count: number }> = {};
+    if (providerIds.length > 0) {
+      const { data: reviewsData } = await supabase
+        .from('provider_reviews')
+        .select('provider_id, rating')
+        .in('provider_id', providerIds);
+      
+      (reviewsData || []).forEach((r: any) => {
+        const id = r.provider_id;
+        if (!reviewsMap[id]) reviewsMap[id] = { rating: 0, reviews_count: 0 };
+        reviewsMap[id].rating += r.rating;
+        reviewsMap[id].reviews_count++;
+      });
+      // Calculate average
+      Object.keys(reviewsMap).forEach(id => {
+        if (reviewsMap[id].reviews_count > 0) {
+          reviewsMap[id].rating = reviewsMap[id].rating / reviewsMap[id].reviews_count;
+        }
+      });
+    }
 
     // Get analytics counts for these providers (last 30 days)
     let analyticsMap: Record<string, { views_30d: number; whatsapp_30d: number }> = {};
@@ -346,12 +368,13 @@ export async function getProvidersForQuery(options: {
       .filter((s: any) => s.providers && s.providers.is_active)
       .map((s: any) => {
         const p = s.providers;
+        const reviews = reviewsMap[p.id] || { rating: 0, reviews_count: 0 };
         return {
           provider_id: p.id,
           provider_name: p.name,
           city: p.city,
-          rating: p.rating || 0,
-          reviews_count: p.reviews_count || 0,
+          rating: reviews.rating,
+          reviews_count: reviews.reviews_count,
           is_premium: p.is_premium || false,
           service_id: s.id,
           service_name: s.service_name || s.description || null,
@@ -366,8 +389,11 @@ export async function getProvidersForQuery(options: {
         };
       });
 
-    // Optionally filter by city
-    const filtered = city ? candidates.filter((c: any) => c.city && c.city.toLowerCase().includes(city.toLowerCase())) : candidates;
+    // Optionally filter by city (normalize for comparison - remove accents and case)
+    const normalizeCity = (str: string) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const filtered = city 
+      ? candidates.filter((c: any) => c.city && normalizeCity(c.city).includes(normalizeCity(city))) 
+      : candidates;
 
     // If budget given, we can sort by proximity; otherwise keep original order
     return filtered.slice(0, limit);
