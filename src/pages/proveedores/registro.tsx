@@ -1,8 +1,25 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import SmartLocationInput from "../../../components/SmartLocationInput";
+import AIDescriptionHelper from "../../../components/AIDescriptionHelper";
 
 export default function RegistroProveedor() {
   const [step, setStep] = useState(0);
+  
+  // Estado de ejemplo para demostrar componentes
+  const [locationData, setLocationData] = useState({
+    address: '',
+    city: '',
+    state: '',
+    mapsUrl: undefined as string | undefined
+  });
+
+  const [businessData, setBusinessData] = useState({
+    name: '',
+    category: '',
+    description: '',
+    services: [] as string[]
+  });
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
@@ -143,7 +160,7 @@ export default function RegistroProveedor() {
             📝 Proceso de Registro (Cuando esté listo)
           </h3>
           
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-4 gap-6 mb-8">
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full font-bold mb-3">
                 1
@@ -174,6 +191,121 @@ export default function RegistroProveedor() {
               </div>
               <h4 className="font-semibold text-gray-900 mb-1">¡Listo!</h4>
               <p className="text-sm text-gray-600">Aprobación rápida</p>
+            </div>
+          </div>
+
+          {/* Demo del SmartLocationInput */}
+          <div className="border-t pt-8 mb-8">
+            <h4 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+              👀 Vista Previa: Campo Inteligente de Ubicación
+            </h4>
+            <div className="max-w-2xl mx-auto bg-gray-50 p-6 rounded-xl">
+              <SmartLocationInput
+                value={locationData}
+                onChange={setLocationData}
+              />
+              
+              {/* Debug info */}
+              {(locationData.address || locationData.mapsUrl) && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-xs font-mono text-gray-500 mb-1">Datos que se guardarían:</p>
+                  <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
+                    {JSON.stringify(locationData, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Demo del AIDescriptionHelper */}
+          <div className="border-t pt-8">
+            <h4 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+              ✨ Vista Previa: IA para Descripciones Profesionales
+            </h4>
+            <div className="max-w-2xl mx-auto bg-gray-50 p-6 rounded-xl">
+              {/* Campos de contexto para la IA */}
+              <div className="mb-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre del negocio
+                  </label>
+                  <input
+                    type="text"
+                    value={businessData.name}
+                    onChange={(e) => setBusinessData({...businessData, name: e.target.value})}
+                    placeholder="Ej: Fotografía María López"
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Categoría
+                  </label>
+                  <select
+                    value={businessData.category}
+                    onChange={(e) => setBusinessData({...businessData, category: e.target.value})}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="">Selecciona una categoría</option>
+                    <option value="Fotografía">📸 Fotografía</option>
+                    <option value="DJ">🎵 DJ / Música</option>
+                    <option value="Decoración">🎨 Decoración</option>
+                    <option value="Banquetes">🍽️ Banquetes</option>
+                    <option value="Video">🎥 Video</option>
+                    <option value="Pastelería">🎂 Pastelería</option>
+                    <option value="Animación">🎭 Animación</option>
+                    <option value="Invitaciones">💌 Invitaciones</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ciudad
+                    </label>
+                    <input
+                      type="text"
+                      value={locationData.city}
+                      onChange={(e) => setLocationData({...locationData, city: e.target.value})}
+                      placeholder="Ej: Monterrey"
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Estado
+                    </label>
+                    <input
+                      type="text"
+                      value={locationData.state}
+                      onChange={(e) => setLocationData({...locationData, state: e.target.value})}
+                      placeholder="Ej: Nuevo León"
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Componente de IA */}
+              <AIDescriptionHelper
+                value={businessData.description}
+                onChange={(newDesc) => setBusinessData({...businessData, description: newDesc})}
+                businessContext={{
+                  businessName: businessData.name,
+                  category: businessData.category,
+                  services: businessData.services,
+                  city: locationData.city,
+                  state: locationData.state
+                }}
+              />
+
+              {/* Debug info */}
+              {businessData.description && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-xs font-mono text-gray-500 mb-1">Longitud: {businessData.description.length} caracteres</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
