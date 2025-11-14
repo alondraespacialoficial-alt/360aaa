@@ -208,7 +208,7 @@ export default function SupplierDetail() {
       title,
       description: description.length > 160 ? description.substring(0, 157) + '...' : description,
       keywords,
-      image: supplier.profile_image_url || supplier.cover_image || '/logo-charlitron.png',
+      image: supplier.profile_image_url || supplier.cover_image || '/charlitron-logo.png',
       type: 'business.business' as const,
       providerData: {
         name: supplier.name,

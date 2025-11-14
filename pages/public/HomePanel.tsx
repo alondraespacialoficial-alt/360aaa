@@ -169,11 +169,11 @@ const HomePanel: React.FC = () => {
           '@type': 'Organization',
           name: 'Charlitron Eventos 360',
           url: 'https://charlitron-eventos-360.com',
-          logo: 'https://vvrl.cc/api/image/kq8w7e/view',
+          logo: '/charlitron-logo.png',
           sameAs: [CHARLITRON_FACEBOOK_URL, CHARLITRON_INSTAGRAM_URL]
         })}} />
         <div className="flex justify-center mb-4">
-          <img src="https://vvrl.cc/api/image/kq8w7e/view" alt="Logo Charlitron" className="h-32 w-auto mx-auto" style={{maxWidth: '260px'}} />
+          <img src="/charlitron-logo.png" alt="Logo Charlitron Eventos 360" className="h-32 w-auto mx-auto" style={{maxWidth: '260px'}} />
         </div>
         <div className="mb-4 flex justify-center gap-4">
           <Link to="/blog" className="inline-block px-5 py-2 border border-indigo-600 text-indigo-700 bg-white rounded-lg shadow-sm hover:bg-indigo-50 transition font-semibold">

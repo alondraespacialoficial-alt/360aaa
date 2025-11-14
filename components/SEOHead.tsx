@@ -32,7 +32,7 @@ const SEOHead: React.FC<SEOProps> = ({
   title = "Charlitron Eventos 360 - Directorio de Proveedores para Eventos en México",
   description = "Encuentra los mejores proveedores para tu evento en México. DJ, fotografía, catering, decoración y más. Compara precios y servicios en San Luis Potosí y toda la República Mexicana.",
   keywords = "eventos México, proveedores eventos, DJ San Luis Potosí, fotografía, catering, decoración, bodas, quinceaños, XV años, México",
-  image = "/logo-charlitron.png",
+  image = "/charlitron-logo.png",
   url,
   type = "website",
   siteName = "Charlitron Eventos 360",

@@ -24,7 +24,7 @@ export class StructuredDataManager {
         "url": this.baseUrl,
         "logo": {
           "@type": "ImageObject",
-          "url": `${this.baseUrl}/logo-charlitron.png`,
+          "url": `${this.baseUrl}/charlitron-logo.png`,
           "width": "200",
           "height": "200"
         },

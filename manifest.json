@@ -21,11 +21,11 @@
       "src": "/android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "maskable"
     },
     {
-      "src": "/logo-charlitron.png",
-      "sizes": "800x800",
+      "src": "/charlitron-logo.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     }

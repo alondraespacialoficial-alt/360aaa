@@ -90,7 +90,7 @@ const CategoryList: React.FC = () => {
       title,
       description: description.length > 160 ? description.substring(0, 157) + '...' : description,
       keywords,
-      image: '/logo-charlitron.png',
+      image: '/charlitron-logo.png',
       type: 'website' as const,
       categoryData: {
         name: category.name,
