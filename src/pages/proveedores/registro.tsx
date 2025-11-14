@@ -1,9 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ProviderRegistrationForm from "../../../components/ProviderRegistrationForm";
 
 export default function RegistroProveedor() {
   const [showForm, setShowForm] = useState(false);
+
+  // Limpiar localStorage cuando el usuario regresa a la landing
+  useEffect(() => {
+    if (!showForm) {
+      // Solo limpiar si el usuario está en la landing (no en el formulario)
+      const shouldClean = sessionStorage.getItem('form_completed');
+      if (shouldClean === 'true') {
+        localStorage.removeItem('provider_registration_draft');
+        sessionStorage.removeItem('form_completed');
+      }
+    }
+  }, [showForm]);
 
   if (showForm) {
     return (

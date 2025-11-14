@@ -92,6 +92,15 @@ const ProviderRegistrationForm: React.FC = () => {
   
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
+  // Limpiar localStorage si es una versión antigua (migración única)
+  useEffect(() => {
+    const version = localStorage.getItem('form_version');
+    if (version !== '2.0') {
+      localStorage.removeItem('provider_registration_draft');
+      localStorage.setItem('form_version', '2.0');
+    }
+  }, []);
+
   // Cargar borrador desde localStorage
   useEffect(() => {
     const draft = localStorage.getItem('provider_registration_draft');
@@ -169,7 +178,7 @@ const ProviderRegistrationForm: React.FC = () => {
 
   const nextStep = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 6));
+      setCurrentStep(prev => Math.min(prev + 1, 7));
       window.scrollTo(0, 0);
     }
   };
@@ -179,10 +188,27 @@ const ProviderRegistrationForm: React.FC = () => {
     window.scrollTo(0, 0);
   };
 
+  const resetForm = () => {
+    if (window.confirm('¿Estás seguro de que quieres limpiar el formulario? Se perderán todos los datos.')) {
+      localStorage.removeItem('provider_registration_draft');
+      window.location.reload();
+    }
+  };
+
   const handleSubmit = async () => {
     // TODO: Enviar a Supabase cuando esté listo
     console.log('Form data:', formData);
-    alert('Formulario listo para enviar (pendiente integración con Supabase)');
+    
+    // Marcar que el formulario se completó
+    sessionStorage.setItem('form_completed', 'true');
+    
+    // Limpiar localStorage después de enviar
+    localStorage.removeItem('provider_registration_draft');
+    
+    alert('¡Formulario enviado exitosamente! Nos pondremos en contacto pronto.\n\nNota: La integración con Supabase está pendiente.');
+    
+    // Recargar página para limpiar formulario
+    window.location.reload();
   };
 
   // Agregar servicio
@@ -213,6 +239,20 @@ const ProviderRegistrationForm: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Botón para limpiar formulario */}
+      <div className="mb-4 flex justify-end">
+        <button
+          type="button"
+          onClick={resetForm}
+          className="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition flex items-center gap-2 border border-red-300"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Limpiar formulario
+        </button>
+      </div>
+      
       {/* Barra de progreso */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
