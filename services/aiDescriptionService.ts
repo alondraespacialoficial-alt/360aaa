@@ -34,10 +34,10 @@ export async function generateProviderDescription(
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash-exp',
       generationConfig: {
-        temperature: 0.8, // Un poco de creatividad pero coherente
+        temperature: 0.95, // Mayor creatividad y variedad
         topP: 0.95,
         topK: 40,
-        maxOutputTokens: 300, // ~500 caracteres en español
+        maxOutputTokens: 400, // Más espacio para descripciones detalladas
         candidateCount: 1,
       },
     });
@@ -83,9 +83,9 @@ export async function generateProviderDescription(
 function buildDescriptionPrompt(context: BusinessContext): string {
   const { businessName, category, services, city, state } = context;
 
-  let prompt = `Eres un experto redactor de contenido para negocios de eventos en México.
+  let prompt = `Eres un experto redactor de contenido para negocios de eventos en México, especializado en crear descripciones persuasivas y memorables.
 
-TAREA: Escribe una descripción profesional y atractiva para un proveedor de eventos.
+TAREA: Escribe una descripción profesional, creativa y atractiva para un proveedor de eventos.
 
 INFORMACIÓN DEL NEGOCIO:
 - Nombre: ${businessName}
@@ -101,23 +101,44 @@ INFORMACIÓN DEL NEGOCIO:
 
   prompt += `
 
-INSTRUCCIONES:
-1. Escribe en primera persona del plural ("Somos", "Ofrecemos", "Nos especializamos")
-2. Máximo 400 caracteres (aproximadamente 60-70 palabras)
-3. Tono profesional pero cálido y cercano
-4. Incluye:
-   - Especialidad principal
-   - Experiencia o calidad del servicio
-   - Ubicación si está disponible
-   - Llamado a la acción sutil (ej: "Contáctanos")
-5. NO inventes datos que no fueron proporcionados
-6. NO uses comillas ni asteriscos
-7. Escribe en español de México
+INSTRUCCIONES CLAVE:
+1. **Voz:** Primera persona plural ("Somos", "Creamos", "Nos especializamos", "Transformamos")
+2. **Extensión:** Entre 250-400 caracteres (50-70 palabras) - usa todo el espacio disponible
+3. **Tono:** Profesional pero emocional, cálido y cercano, que inspire confianza
+4. **Estructura:**
+   - Frase de impacto inicial (qué hace especial al negocio)
+   - Especialidad y experiencia (usa verbos de acción)
+   - Beneficio emocional para el cliente (cómo transforma su evento)
+   - Ubicación si está disponible (naturalizada en el texto)
+   - Llamado a la acción inspirador (no genérico)
 
-EJEMPLO DE ESTILO:
-"Somos especialistas en fotografía de bodas en Monterrey, con más de 5 años capturando los momentos más especiales de tu gran día. Utilizamos equipo profesional de última generación para garantizar imágenes de alta calidad que conservarás por siempre. ¡Contáctanos y hagamos realidad el álbum de tus sueños!"
+5. **Estilo:**
+   - Usa metáforas sutiles relacionadas con eventos/celebraciones
+   - Incluye palabras emocionales positivas (memorables, únicos, especiales, perfectos, soñados)
+   - Evita clichés obvios ("alta calidad", "los mejores", "excelente servicio")
+   - Sé específico según la categoría (ej: "ambientes" para decoración, "momentos" para fotografía)
 
-AHORA GENERA LA DESCRIPCIÓN:`;
+6. **Prohibido:**
+   - Inventar datos no proporcionados
+   - Usar comillas, asteriscos o símbolos especiales
+   - Frases genéricas sin personalidad
+   - Ser demasiado corto o básico
+
+EJEMPLOS DE DIFERENTES CATEGORÍAS:
+
+**Fotografía:**
+"Capturamos la esencia de tu gran día a través de nuestro lente. En ${businessName}, convertimos instantes fugaces en recuerdos eternos con un estilo artístico y auténtico. Cada imagen cuenta una historia, cada detalle importa. Desde ${city || 'nuestra ciudad'}, creamos álbumes que revivirás con emoción por siempre. ¡Hagamos juntos la magia visual de tu evento!"
+
+**Catering:**
+"Deleitamos paladares y creamos experiencias gastronómicas inolvidables. En ${businessName}, cada platillo es una celebración del sabor, preparado con ingredientes frescos y pasión por la cocina. Transformamos tu evento en un festín memorable donde tus invitados disfrutarán cada bocado. Ubicados en ${city || 'tu ciudad'}, llevamos la alta cocina a tu celebración."
+
+**Decoración:**
+"Diseñamos ambientes que cuentan historias y despiertan emociones. En ${businessName}, cada espacio se transforma en el escenario perfecto para tu celebración. Combinamos creatividad, estilo y atención al detalle para crear la atmósfera exacta que has imaginado. Desde ${city || 'nuestra ciudad'}, hacemos realidad tus sueños decorativos."
+
+**Música:**
+"Ponemos el ritmo y la energía que tu evento necesita. En ${businessName}, creamos la banda sonora perfecta para cada momento de tu celebración. Con repertorio versátil y lectura de audiencia impecable, garantizamos que tus invitados vivan una fiesta inolvidable. Basados en ${city || 'la región'}, llevamos la mejor música a tu evento."
+
+AHORA, APLICA ESTOS PRINCIPIOS Y GENERA UNA DESCRIPCIÓN MEMORABLE PARA ${businessName}:`;
 
   return prompt;
 }

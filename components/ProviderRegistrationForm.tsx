@@ -124,7 +124,7 @@ const ProviderRegistrationForm: React.FC = () => {
     const newErrors: {[key: string]: string} = {};
     
     switch(step) {
-      case 1:
+      case 1: // Datos básicos
         if (!formData.businessName.trim()) newErrors.businessName = 'El nombre del negocio es requerido';
         if (!formData.contactName.trim()) newErrors.contactName = 'El nombre de contacto es requerido';
         if (!formData.email.trim()) newErrors.email = 'El email es requerido';
@@ -133,7 +133,16 @@ const ProviderRegistrationForm: React.FC = () => {
         if (!formData.whatsapp.trim()) newErrors.whatsapp = 'El WhatsApp es requerido';
         break;
         
-      case 2:
+      case 2: // Categorías
+        if (formData.categories.length === 0) newErrors.categories = 'Selecciona al menos una categoría';
+        break;
+        
+      case 3: // Descripción con IA
+        if (!formData.description.trim()) newErrors.description = 'La descripción es requerida';
+        else if (formData.description.length < 50) newErrors.description = 'La descripción debe tener al menos 50 caracteres';
+        break;
+        
+      case 4: // Ubicación
         if (!formData.location.mapsUrl && !formData.location.address) {
           newErrors.location = 'Debes proporcionar una ubicación (dirección o link de Maps)';
         }
@@ -143,14 +152,14 @@ const ProviderRegistrationForm: React.FC = () => {
         }
         break;
         
-      case 3:
-        if (!formData.description.trim()) newErrors.description = 'La descripción es requerida';
-        else if (formData.description.length < 50) newErrors.description = 'La descripción debe tener al menos 50 caracteres';
+      case 5: // Servicios
+        if (formData.services.length === 0) newErrors.services = 'Agrega al menos un servicio';
         break;
         
-      case 4:
-        if (formData.categories.length === 0) newErrors.categories = 'Selecciona al menos una categoría';
-        if (formData.services.length === 0) newErrors.services = 'Agrega al menos un servicio';
+      case 6: // Fotos (opcional - sin validación)
+        break;
+        
+      case 7: // Redes sociales (opcional - sin validación)
         break;
     }
     
@@ -207,7 +216,7 @@ const ProviderRegistrationForm: React.FC = () => {
       {/* Barra de progreso */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
-          {[1, 2, 3, 4, 5, 6].map(step => (
+          {[1, 2, 3, 4, 5, 6, 7].map(step => (
             <div key={step} className="flex flex-col items-center flex-1">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition ${
                 currentStep === step 
@@ -220,11 +229,12 @@ const ProviderRegistrationForm: React.FC = () => {
               </div>
               <span className="text-xs mt-1 text-gray-600 hidden sm:block">
                 {step === 1 && 'Datos'}
-                {step === 2 && 'Ubicación'}
+                {step === 2 && 'Categorías'}
                 {step === 3 && 'Descripción'}
-                {step === 4 && 'Servicios'}
-                {step === 5 && 'Fotos'}
-                {step === 6 && 'Redes'}
+                {step === 4 && 'Ubicación'}
+                {step === 5 && 'Servicios'}
+                {step === 6 && 'Fotos'}
+                {step === 7 && 'Redes'}
               </span>
             </div>
           ))}
@@ -232,7 +242,7 @@ const ProviderRegistrationForm: React.FC = () => {
         <div className="w-full bg-gray-200 h-2 rounded-full">
           <div 
             className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${(currentStep / 6) * 100}%` }}
+            style={{ width: `${(currentStep / 7) * 100}%` }}
           />
         </div>
       </div>
@@ -328,43 +338,11 @@ const ProviderRegistrationForm: React.FC = () => {
           </div>
         )}
 
-        {/* Paso 2: Ubicación */}
+        {/* Paso 2: Categorías */}
         {currentStep === 2 && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">📍 Ubicación</h2>
-            <SmartLocationInput
-              value={formData.location}
-              onChange={(newLocation) => setFormData({...formData, location: newLocation})}
-              error={errors.location || errors.city || errors.state}
-            />
-          </div>
-        )}
-
-        {/* Paso 3: Descripción con IA */}
-        {currentStep === 3 && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">✍️ Descripción del Negocio</h2>
-            <AIDescriptionHelper
-              value={formData.description}
-              onChange={(newDesc) => setFormData({...formData, description: newDesc})}
-              businessContext={{
-                businessName: formData.businessName,
-                category: formData.categories[0],
-                services: formData.services.map(s => s.name),
-                city: formData.location.city,
-                state: formData.location.state
-              }}
-            />
-            {errors.description && <p className="text-red-600 text-sm mt-1">{errors.description}</p>}
-          </div>
-        )}
-
-        {/* Paso 4: Categorías y Servicios */}
-        {currentStep === 4 && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">🏷️ Categorías y Servicios</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">🏷️ Categorías</h2>
             
-            {/* Categorías */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Selecciona tus categorías * (puedes elegir varias)
@@ -391,11 +369,55 @@ const ProviderRegistrationForm: React.FC = () => {
               {errors.categories && <p className="text-red-600 text-sm mt-1">{errors.categories}</p>}
             </div>
 
-            {/* Servicios */}
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <p className="text-sm text-purple-800">
+                💡 <strong>Tip:</strong> Selecciona todas las categorías que apliquen a tu negocio. 
+                Esto ayudará a que los clientes te encuentren más fácilmente.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Paso 3: Descripción con IA */}
+        {currentStep === 3 && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">✍️ Descripción del Negocio</h2>
+            <AIDescriptionHelper
+              value={formData.description}
+              onChange={(newDesc) => setFormData({...formData, description: newDesc})}
+              businessContext={{
+                businessName: formData.businessName,
+                category: formData.categories[0],
+                services: formData.services.map(s => s.name),
+                city: formData.location.city,
+                state: formData.location.state
+              }}
+            />
+            {errors.description && <p className="text-red-600 text-sm mt-1">{errors.description}</p>}
+          </div>
+        )}
+
+        {/* Paso 4: Ubicación */}
+        {currentStep === 4 && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">📍 Ubicación</h2>
+            <SmartLocationInput
+              value={formData.location}
+              onChange={(newLocation) => setFormData({...formData, location: newLocation})}
+              error={errors.location || errors.city || errors.state}
+            />
+          </div>
+        )}
+
+        {/* Paso 5: Servicios */}
+        {currentStep === 5 && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">💼 Servicios que Ofreces</h2>
+            
             <div>
               <div className="flex justify-between items-center mb-3">
                 <label className="block text-sm font-semibold text-gray-700">
-                  Servicios que ofreces *
+                  Servicios *
                 </label>
                 <button
                   type="button"
@@ -468,8 +490,8 @@ const ProviderRegistrationForm: React.FC = () => {
           </div>
         )}
 
-        {/* Paso 5: Fotos */}
-        {currentStep === 5 && (
+        {/* Paso 6: Fotos */}
+        {currentStep === 6 && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">📸 Fotos de tu Negocio</h2>
             
@@ -520,8 +542,8 @@ const ProviderRegistrationForm: React.FC = () => {
           </div>
         )}
 
-        {/* Paso 6: Redes sociales */}
-        {currentStep === 6 && (
+        {/* Paso 7: Redes sociales */}
+        {currentStep === 7 && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">🌐 Redes Sociales (Opcional)</h2>
             
@@ -622,10 +644,10 @@ const ProviderRegistrationForm: React.FC = () => {
           </button>
 
           <div className="text-sm text-gray-500">
-            Paso {currentStep} de 6
+            Paso {currentStep} de 7
           </div>
 
-          {currentStep < 6 ? (
+          {currentStep < 7 ? (
             <button
               type="button"
               onClick={nextStep}
