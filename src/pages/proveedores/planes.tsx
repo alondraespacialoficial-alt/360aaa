@@ -47,6 +47,109 @@ export default function PlanesProveedor() {
           </p>
         </div>
 
+        {/* Sección de Opciones de Registro */}
+        <div className="mt-10 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-8 border border-indigo-100">
+          <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">
+            📋 ¿Cómo quieres registrarte?
+          </h2>
+          <p className="text-center text-gray-600 mb-8">
+            Elige la opción que más te convenga
+          </p>
+          
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {/* Opción 1: Nosotros te ayudamos */}
+            <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-gray-200 hover:border-indigo-400 transition-all hover:shadow-xl">
+              <div className="text-center mb-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-3">
+                  <span className="text-3xl">🤝</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Nosotros te Ayudamos
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">Tradicional y personal</p>
+              </div>
+              
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
+                  <span>Nos contactas por WhatsApp</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
+                  <span>Nos envías tus datos y fotos</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
+                  <span>Configuramos tu perfil completo</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
+                  <span>Te avisamos cuando esté listo</span>
+                </li>
+              </ul>
+
+              <a
+                href={waLink(
+                  WA_BASE,
+                  `Hola, quiero registrarme en Charlitron Eventos 360 y necesito ayuda para configurar mi perfil. Mi giro es: ____`
+                )}
+                className="block w-full text-center px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition shadow-md"
+              >
+                📱 Contactar por WhatsApp
+              </a>
+            </div>
+
+            {/* Opción 2: Auto-registro */}
+            <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-indigo-500 hover:border-indigo-600 transition-all hover:shadow-xl relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  NUEVO 🚀
+                </span>
+              </div>
+              
+              <div className="text-center mb-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-3">
+                  <span className="text-3xl">🚀</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Regístrate Tú Mismo
+                </h3>
+                <p className="text-sm text-indigo-600 mt-1 font-medium">Rápido y fácil</p>
+              </div>
+              
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-indigo-600 font-bold mt-0.5">✓</span>
+                  <span>Regístrate con Google en 5 min</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-indigo-600 font-bold mt-0.5">✓</span>
+                  <span>Sube tus fotos directamente</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-indigo-600 font-bold mt-0.5">✓</span>
+                  <span>Edita tu perfil cuando quieras</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm text-gray-700">
+                  <span className="text-indigo-600 font-bold mt-0.5">✓</span>
+                  <span>Activo tras nuestra aprobación</span>
+                </li>
+              </ul>
+
+              <a
+                href="/registro-proveedor"
+                className="block w-full text-center px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-700 hover:to-purple-700 transition shadow-md"
+              >
+                🔐 Comenzar Registro
+              </a>
+            </div>
+          </div>
+
+          <p className="text-center text-sm text-gray-500 mt-6">
+            💡 <strong>Tip:</strong> Ambas opciones te dan acceso a los mismos planes y beneficios
+          </p>
+        </div>
+
         <div className="mt-8 flex items-center justify-center gap-2">
           <button
             onClick={() => setBilling("mensual")}

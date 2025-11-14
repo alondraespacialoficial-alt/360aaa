@@ -12,6 +12,7 @@ import CategoryList from './pages/public/CategoryList';
 import SupplierDetail from './pages/public/SupplierDetail';
 import FavoritesPage from './pages/public/FavoritesPage';
 import PlanesProveedor from './src/pages/proveedores/planes';
+import RegistroProveedor from './src/pages/proveedores/registro';
 
 // Admin pages and layout
 import AdminLogin from './pages/admin/AdminLogin';
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/proveedor/:id" element={<SupplierDetail />} />
             <Route path="/favoritos" element={<FavoritesPage />} />
             <Route path="/proveedores/planes" element={<PlanesProveedor />} />
+            <Route path="/registro-proveedor" element={<RegistroProveedor />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/legal" element={<LegalNotice />} />
 
