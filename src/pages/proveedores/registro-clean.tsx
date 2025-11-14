@@ -5,18 +5,25 @@ import ProviderRegistrationForm from "../../../components/ProviderRegistrationFo
 export default function RegistroProveedor() {
   const [showForm, setShowForm] = useState(false);
 
+  // Vista del formulario
   if (showForm) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-8 flex justify-between items-center">
             <button
               onClick={() => setShowForm(false)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-gray-700 hover:bg-gray-100 transition font-medium shadow-sm"
             >
               ← Ver información
             </button>
+            <Link
+              to="/proveedores/planes"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition font-medium"
+            >
+              Ver planes
+            </Link>
           </div>
 
           <ProviderRegistrationForm />
@@ -25,6 +32,7 @@ export default function RegistroProveedor() {
     );
   }
 
+  // Vista de información (Coming Soon)
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
