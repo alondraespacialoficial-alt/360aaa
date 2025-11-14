@@ -74,7 +74,15 @@ const SEOHead: React.FC<SEOProps> = ({
     updateMetaTag('og:locale', 'es_MX', true);
     
     if (image) {
-      updateMetaTag('og:image', image.startsWith('http') ? image : `${window.location.origin}${image}`, true);
+      const fullImageUrl = image.startsWith('http') 
+        ? image 
+        : image === '/charlitron-logo.png'
+          ? 'https://static.wixstatic.com/media/7fb206_893f39bbcc1d4a469839dce707985bf7~mv2.png/v1/fill/w_1200,h_630,al_c,q_90,usm_0.66_1.00_0.01/charlitron-logo.png'
+          : `${window.location.origin}${image}`;
+      
+      updateMetaTag('og:image', fullImageUrl, true);
+      updateMetaTag('og:image:secure_url', fullImageUrl, true);
+      updateMetaTag('og:image:type', 'image/png', true);
       updateMetaTag('og:image:width', '1200', true);
       updateMetaTag('og:image:height', '630', true);
       updateMetaTag('og:image:alt', title, true);
@@ -91,7 +99,13 @@ const SEOHead: React.FC<SEOProps> = ({
     updateMetaTag('twitter:title', title);
     updateMetaTag('twitter:description', description);
     if (image) {
-      updateMetaTag('twitter:image', image.startsWith('http') ? image : `${window.location.origin}${image}`);
+      const fullImageUrl = image.startsWith('http') 
+        ? image 
+        : image === '/charlitron-logo.png'
+          ? 'https://static.wixstatic.com/media/7fb206_893f39bbcc1d4a469839dce707985bf7~mv2.png/v1/fill/w_1200,h_630,al_c,q_90,usm_0.66_1.00_0.01/charlitron-logo.png'
+          : `${window.location.origin}${image}`;
+      updateMetaTag('twitter:image', fullImageUrl);
+      updateMetaTag('twitter:image:alt', title);
     }
 
     // Canonical URL
