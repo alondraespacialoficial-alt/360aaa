@@ -248,14 +248,24 @@ export default function RegistroProveedor() {
                     className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
                   >
                     <option value="">Selecciona una categoría</option>
-                    <option value="Fotografía">📸 Fotografía</option>
-                    <option value="DJ">🎵 DJ / Música</option>
-                    <option value="Decoración">🎨 Decoración</option>
-                    <option value="Banquetes">🍽️ Banquetes</option>
-                    <option value="Video">🎥 Video</option>
-                    <option value="Pastelería">🎂 Pastelería</option>
-                    <option value="Animación">🎭 Animación</option>
-                    <option value="Invitaciones">💌 Invitaciones</option>
+                    <option value="Autos">🚗 Autos</option>
+                    <option value="Transporte">🚐 Transporte</option>
+                    <option value="Música y Entretenimiento">🎵 Música y Entretenimiento</option>
+                    <option value="Fotografía y Video">📸 Fotografía y Video</option>
+                    <option value="Entretenimiento">🎪 Entretenimiento</option>
+                    <option value="Maquillaje">💄 Maquillaje</option>
+                    <option value="Repostería y dulces">🍰 Repostería y dulces</option>
+                    <option value="Mobiliario">🪑 Mobiliario</option>
+                    <option value="Peluquería">💇 Peluquería</option>
+                    <option value="Organizadores">📋 Organizadores</option>
+                    <option value="Vestuario">👗 Vestuario</option>
+                    <option value="Banquetes y Catering">🍽️ Banquetes y Catering</option>
+                    <option value="Personal">👤 Personal</option>
+                    <option value="Salones">🏛️ Salones</option>
+                    <option value="Comida y bebidas">🍕 Comida y bebidas</option>
+                    <option value="Lugares y Salones">🏰 Lugares y Salones</option>
+                    <option value="Decoración y Ambientación">🎨 Decoración y Ambientación</option>
+                    <option value="Flores y decoración">🌸 Flores y decoración</option>
                   </select>
                 </div>
 
