@@ -158,6 +158,11 @@ const AIDescriptionHelper: React.FC<AIDescriptionHelperProps> = ({
               ⚠️ Llena nombre y categoría primero para usar la IA
             </p>
           )}
+          {(!import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY === 'AIzaSyDummyKeyReplaceWithReal') && (
+            <p className="text-xs text-red-600 mt-1">
+              🚫 IA temporalmente no disponible - escribe tu descripción manualmente
+            </p>
+          )}
         </div>
       </div>
 

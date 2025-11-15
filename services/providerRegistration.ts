@@ -159,28 +159,89 @@ export async function registerProvider(
       }
     };
     
-    // 4. Insertar en base de datos
+    // 4. Insertar en base de datos usando función RPC
     console.log('💾 Guardando en base de datos...');
-    const { data: result, error } = await supabase
-      .from('provider_registrations')
-      .insert(registrationData)
-      .select('id')
-      .single();
     
-    if (error) {
-      console.error('❌ Error al guardar registro:', error);
+    try {
+      const { data: result, error } = await supabase.rpc('insert_provider_registration_public', {
+        p_business_name: data.businessName,
+        p_contact_name: data.contactName,
+        p_email: data.email,
+        p_phone: data.phone,
+        p_whatsapp: data.whatsapp,
+        p_location_type: data.location.type,
+        p_description: data.description,
+        p_categories: data.categories,
+        p_services: data.services,
+        p_address: data.location.address || null,
+        p_city: data.location.city || null,
+        p_state: data.location.state || null,
+        p_maps_url: data.location.mapsUrl || null,
+        p_profile_image_url: profileImageUrl,
+        p_gallery_images: galleryUrls,
+        p_instagram: data.instagram || null,
+        p_instagram_url: data.instagramUrl || null,
+        p_facebook: data.facebook || null,
+        p_facebook_url: data.facebookUrl || null,
+        p_website: data.website || null,
+        p_metadata: registrationData.metadata
+      });
+      
+      if (error) {
+        console.error('❌ Error RPC al guardar registro:', error);
+        return {
+          success: false,
+          error: `Error al guardar: ${error.message}`
+        };
+      }
+      
+      // El RPC retorna el UUID directamente
+      const registrationId = result;
+      
+      if (!registrationId) {
+        console.error('❌ No se recibió ID de registro');
+        return {
+          success: false,
+          error: 'No se pudo completar el registro'
+        };
+      }
+      
+      console.log('✅ Registro completado exitosamente! ID:', registrationId);
+      
       return {
-        success: false,
-        error: `Error al guardar: ${error.message}`
+        success: true,
+        registrationId: registrationId
+      };
+      
+    } catch (rpcError: any) {
+      console.error('❌ Error RPC:', rpcError);
+      
+      // Fallback: intentar inserción directa
+      console.log('🔄 Intentando inserción directa como fallback...');
+      
+      const { data: fallbackResult, error: fallbackError } = await supabase
+        .from('provider_registrations')
+        .insert(registrationData)
+        .select('id')
+        .single();
+      
+      if (fallbackError) {
+        console.error('❌ Error fallback al guardar registro:', fallbackError);
+        return {
+          success: false,
+          error: `Error al guardar: ${fallbackError.message}`
+        };
+      }
+      
+      console.log('✅ Registro completado con fallback! ID:', fallbackResult.id);
+      
+      return {
+        success: true,
+        registrationId: fallbackResult.id
       };
     }
     
-    console.log('✅ Registro completado exitosamente! ID:', result.id);
-    
-    return {
-      success: true,
-      registrationId: result.id
-    };
+
     
   } catch (error: any) {
     console.error('❌ Error general en registro:', error);
@@ -196,18 +257,30 @@ export async function registerProvider(
  */
 export async function checkEmailExists(email: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase
-      .from('provider_registrations')
-      .select('id')
-      .eq('email', email)
-      .limit(1);
+    // Usar la función RPC pública
+    const { data, error } = await supabase.rpc('check_email_exists_public', {
+      email_to_check: email
+    });
     
     if (error) {
-      console.error('Error checking email:', error);
-      return false;
+      console.error('Error checking email with RPC:', error);
+      
+      // Fallback: consulta directa
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('provider_registrations')
+        .select('id')
+        .eq('email', email.toLowerCase())
+        .limit(1);
+      
+      if (fallbackError) {
+        console.error('Error in fallback email check:', fallbackError);
+        return false;
+      }
+      
+      return fallbackData && fallbackData.length > 0;
     }
     
-    return data && data.length > 0;
+    return data === true;
   } catch (error) {
     console.error('Error in checkEmailExists:', error);
     return false;

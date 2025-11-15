@@ -80,6 +80,12 @@ export async function createCheckoutSession(
       return { error: 'Plan no encontrado' };
     }
 
+    // Verificar que Stripe esté configurado
+    const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+    if (!stripeKey || stripeKey === 'pk_test_DummyKeyReplaceWithReal') {
+      throw new Error('Stripe no está configurado. Contacta al administrador.');
+    }
+
     // Llamar a la Edge Function de Supabase
     const response = await fetch(
       'https://tbtivlwldbwwoclraiue.supabase.co/functions/v1/create-checkout-session',
@@ -98,7 +104,9 @@ export async function createCheckoutSession(
     );
 
     if (!response.ok) {
-      throw new Error('Error al crear sesión de pago');
+      const errorData = await response.text();
+      console.error('Stripe error response:', errorData);
+      throw new Error('Servicio de pagos temporalmente no disponible. Intenta más tarde.');
     }
 
     const { sessionId, url } = await response.json();

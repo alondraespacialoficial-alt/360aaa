@@ -22,6 +22,12 @@ export async function generateProviderDescription(
   const startTime = Date.now();
 
   try {
+    // Validar API key
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey || apiKey === 'AIzaSyDummyKeyReplaceWithReal') {
+      throw new Error('La función de IA no está configurada. Por favor, escribe tu descripción manualmente.');
+    }
+
     // Validar que tengamos datos mínimos
     if (!context.businessName || !context.category) {
       throw new Error('Se requiere nombre del negocio y categoría');
@@ -73,7 +79,16 @@ export async function generateProviderDescription(
       context
     });
 
-    throw new Error('No pudimos generar la descripción. Por favor, intenta de nuevo o escribe tu propia descripción.');
+    // Mensaje específico para diferentes errores
+    if (error.message.includes('no está configurada')) {
+      throw new Error('La función de IA no está disponible en este momento. Por favor, escribe tu descripción manualmente.');
+    }
+    
+    if (error.message.includes('GEMINI_API_KEY')) {
+      throw new Error('Servicio de IA temporalmente no disponible. Escribe tu descripción manualmente.');
+    }
+
+    throw new Error('No se pudo generar la descripción automáticamente. Por favor, escribe tu propia descripción.');
   }
 }
 
@@ -104,19 +119,19 @@ INFORMACIÓN DEL NEGOCIO:
 INSTRUCCIONES CLAVE:
 1. **Voz:** Primera persona plural ("Somos", "Creamos", "Nos especializamos", "Transformamos")
 2. **Extensión:** Entre 250-400 caracteres (50-70 palabras) - usa todo el espacio disponible
-3. **Tono:** Profesional pero emocional, cálido y cercano, que inspire confianza
-4. **Estructura:**
-   - Frase de impacto inicial (qué hace especial al negocio)
-   - Especialidad y experiencia (usa verbos de acción)
-   - Beneficio emocional para el cliente (cómo transforma su evento)
-   - Ubicación si está disponible (naturalizada en el texto)
-   - Llamado a la acción inspirador (no genérico)
+3. **Tono:** Comercial directo, profesional y enfocado en beneficios concretos
+4. **Estructura SEO:**
+   - Palabra clave principal al inicio ("Servicios de X en [ciudad]")
+   - Especialidades y servicios específicos (palabras clave long-tail)
+   - Beneficios tangibles y garantías (entrega, tiempo, capacidad)
+   - Ubicación geográfica clara para SEO local
+   - Call-to-action directo y específico
 
-5. **Estilo:**
-   - Usa metáforas sutiles relacionadas con eventos/celebraciones
-   - Incluye palabras emocionales positivas (memorables, únicos, especiales, perfectos, soñados)
-   - Evita clichés obvios ("alta calidad", "los mejores", "excelente servicio")
-   - Sé específico según la categoría (ej: "ambientes" para decoración, "momentos" para fotografía)
+5. **Palabras clave por categoría:**
+   - Fotografía: "fotografía de bodas", "video cinematográfico", "sesiones pre-boda", "fotógrafo profesional"
+   - Catering: "servicio de catering", "banquetes para eventos", "menús personalizados", "servicio de meseros"
+   - Decoración: "decoración para bodas", "arreglos florales", "montaje de eventos", "ambientación"
+   - Música: "DJ para bodas", "servicio musical", "equipo de sonido", "animación de fiestas"
 
 6. **Prohibido:**
    - Inventar datos no proporcionados
