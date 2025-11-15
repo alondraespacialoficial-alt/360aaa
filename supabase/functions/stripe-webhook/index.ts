@@ -78,12 +78,22 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const registrationId = session.metadata?.registration_id
   const subscriptionId = session.subscription as string
 
-  if (!subscriptionId) return
+  console.log('📝 Processing checkout completion...')
+  console.log('Registration ID:', registrationId)
+  console.log('Subscription ID:', subscriptionId)
+
+  if (!subscriptionId) {
+    console.error('❌ No subscription ID found in session')
+    return
+  }
 
   // Obtener detalles de la suscripción
   const subscription = await stripe.subscriptions.retrieve(subscriptionId)
   const priceId = subscription.items.data[0].price.id
   const customerId = subscription.customer as string
+
+  console.log('Price ID:', priceId)
+  console.log('Customer ID:', customerId)
 
   // Buscar el plan correspondiente
   const planMapping: { [key: string]: { id: string; name: string; billing: string } } = {
@@ -95,16 +105,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   const plan = planMapping[priceId]
   if (!plan) {
-    console.error('Unknown price ID:', priceId)
+    console.error('❌ Unknown price ID:', priceId)
     return
   }
 
+  console.log('✅ Plan identified:', plan.name, '(' + plan.id + ')')
+
   // Crear registro de suscripción en Supabase
-  const { data, error } = await supabase
+  const { data: subscriptionData, error: subscriptionError } = await supabase
     .from('provider_subscriptions')
     .insert({
-      registration_id: registrationId,
-      user_id: session.client_reference_id || null,
+      registration_id: registrationId || null,
       email: session.customer_email || session.customer_details?.email,
       plan_id: plan.id,
       plan_name: plan.name,
@@ -121,25 +132,43 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     .select()
     .single()
 
-  if (error) {
-    console.error('Error creating subscription record:', error)
+  if (subscriptionError) {
+    console.error('❌ Error creating subscription record:', subscriptionError)
     return
   }
 
-  console.log('Subscription created:', data.id)
+  console.log('✅ Subscription created in DB:', subscriptionData.id)
 
-  // Si hay registration_id, aprobar automáticamente
+  // Marcar el registro como "pago confirmado" pero NO aprobar automáticamente
   if (registrationId) {
-    const { error: approveError } = await supabase.rpc('approve_provider_registration', {
-      registration_id: registrationId,
-      admin_user_id: null, // Aprobación automática por pago
-    })
-
-    if (approveError) {
-      console.error('Error auto-approving registration:', approveError)
-    } else {
-      console.log('Registration auto-approved:', registrationId)
+    console.log('💰 Payment confirmed for registration:', registrationId)
+    console.log('⏳ Awaiting admin approval...')
+    
+    try {
+      // Actualizar registro con nota de pago confirmado
+      const { error: updateError } = await supabase
+        .from('provider_registrations')
+        .update({
+          admin_notes: `✅ Pago confirmado vía Stripe el ${new Date().toLocaleString('es-MX')}. Plan: ${plan.name} (${plan.billing === 'monthly' ? 'Mensual' : 'Anual'}). Pendiente de aprobación manual.`,
+          metadata: {
+            payment_confirmed_at: new Date().toISOString(),
+            stripe_subscription_id: subscriptionId,
+            plan_id: plan.id
+          }
+        })
+        .eq('id', registrationId)
+      
+      if (updateError) {
+        console.error('❌ Error updating registration with payment info:', updateError)
+      } else {
+        console.log('✅ Registration updated with payment confirmation')
+        console.log('📧 Admin should review and approve manually in admin panel')
+      }
+    } catch (error: any) {
+      console.error('❌ Exception updating registration:', error)
     }
+  } else {
+    console.warn('⚠️ No registration ID provided, payment recorded but cannot link to registration')
   }
 }
 

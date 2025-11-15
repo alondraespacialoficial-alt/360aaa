@@ -265,30 +265,18 @@ const ProviderRegistrationForm: React.FC = () => {
         const regId = result.registrationId || '';
         setRegistrationId(regId);
         
-        // Marcar que el formulario se completó
-        sessionStorage.setItem('form_completed', 'true');
-        sessionStorage.setItem('registration_id', regId);
+        console.log('✅ Registro guardado con ID:', regId);
         
-        // Limpiar localStorage
+        // Limpiar localStorage del borrador
         localStorage.removeItem('provider_registration_draft');
         
-        // Si estamos en el paso 7, NO recargar, solo avanzar al paso 8
-        if (currentStep === 7) {
-          setCurrentStep(8);
-          setIsSubmitting(false);
-          return;
-        }
+        // Avanzar al paso 8 (pago)
+        setCurrentStep(8);
+        setIsSubmitting(false);
         
-        // Mostrar mensaje de éxito
-        alert(
-          '🎉 ¡Registro enviado exitosamente!\n\n' +
-          'Tu solicitud ha sido recibida y está pendiente de revisión.\n' +
-          'Te contactaremos pronto al email: ' + formData.email + '\n\n' +
-          'ID de registro: ' + result.registrationId
-        );
+        // Scroll arriba
+        window.scrollTo(0, 0);
         
-        // Recargar página
-        window.location.reload();
       } else {
         // Mostrar error
         alert(
@@ -815,6 +803,24 @@ const ProviderRegistrationForm: React.FC = () => {
         {/* Paso 8: Selección de Plan y Pago */}
         {currentStep === 8 && (
           <div className="space-y-6">
+            {/* Mensaje de confirmación con ID del registro */}
+            {registrationId && (
+              <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="text-green-600 text-3xl">✅</div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-green-800">¡Registro guardado exitosamente!</h3>
+                    <p className="text-sm text-green-700 mt-1">
+                      ID de registro: <code className="font-mono bg-green-100 px-2 py-1 rounded">{registrationId}</code>
+                    </p>
+                    <p className="text-sm text-green-700 mt-2">
+                      Ahora selecciona un plan y procede al pago para activar tu perfil de inmediato.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <PlanSelector
               onPlanSelect={setSelectedPlanId}
               selectedPlanId={selectedPlanId}
@@ -825,23 +831,28 @@ const ProviderRegistrationForm: React.FC = () => {
                   return;
                 }
                 
-                setIsSubmitting(true);
-                
-                // Si aún no se ha guardado el registro, guardarlo primero
                 if (!registrationId) {
-                  await handleSubmit();
+                  alert('Error: No se encontró el ID de registro. Por favor intenta de nuevo.');
+                  return;
                 }
                 
-                // Redirigir a Stripe Checkout
-                if (registrationId) {
+                console.log('💳 Procesando pago para registro:', registrationId);
+                console.log('📦 Plan seleccionado:', selectedPlanId);
+                
+                setIsSubmitting(true);
+                
+                try {
+                  // Redirigir a Stripe Checkout con el registrationId
                   await redirectToCheckout(
                     selectedPlanId,
                     registrationId,
                     formData.email
                   );
+                } catch (error: any) {
+                  console.error('Error al procesar pago:', error);
+                  alert('Error al procesar el pago: ' + error.message);
+                  setIsSubmitting(false);
                 }
-                
-                setIsSubmitting(false);
               }}
               isProcessing={isSubmitting}
             />
