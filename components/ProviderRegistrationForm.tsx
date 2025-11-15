@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SmartLocationInput from './SmartLocationInput';
 import AIDescriptionHelper from './AIDescriptionHelper';
+import { registerProvider, checkEmailExists } from '../services/providerRegistration';
 
 interface Service {
   name: string;
@@ -91,6 +92,7 @@ const ProviderRegistrationForm: React.FC = () => {
   });
   
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Limpiar localStorage si es una versión antigua (migración única)
   useEffect(() => {
@@ -196,19 +198,77 @@ const ProviderRegistrationForm: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    // TODO: Enviar a Supabase cuando esté listo
-    console.log('Form data:', formData);
+    setIsSubmitting(true);
     
-    // Marcar que el formulario se completó
-    sessionStorage.setItem('form_completed', 'true');
-    
-    // Limpiar localStorage después de enviar
-    localStorage.removeItem('provider_registration_draft');
-    
-    alert('¡Formulario enviado exitosamente! Nos pondremos en contacto pronto.\n\nNota: La integración con Supabase está pendiente.');
-    
-    // Recargar página para limpiar formulario
-    window.location.reload();
+    try {
+      console.log('📝 Enviando registro...');
+      
+      // Preparar datos según el formato esperado
+      const registrationData = {
+        businessName: formData.businessName,
+        contactName: formData.contactName,
+        email: formData.email,
+        phone: formData.phone,
+        whatsapp: formData.whatsapp,
+        
+        location: {
+          type: formData.location.mapsUrl ? 'maps_url' as const : 'manual' as const,
+          address: formData.location.address,
+          city: formData.location.city,
+          state: formData.location.state,
+          mapsUrl: formData.location.mapsUrl
+        },
+        
+        description: formData.description,
+        categories: formData.categories,
+        services: formData.services,
+        
+        profileImage: formData.profileImage || undefined,
+        galleryImages: formData.galleryImages,
+        
+        instagram: formData.instagram,
+        instagramUrl: formData.instagramUrl,
+        facebook: formData.facebook,
+        facebookUrl: formData.facebookUrl,
+        website: formData.website
+      };
+      
+      // Enviar a Supabase
+      const result = await registerProvider(registrationData);
+      
+      if (result.success) {
+        // Marcar que el formulario se completó
+        sessionStorage.setItem('form_completed', 'true');
+        sessionStorage.setItem('registration_id', result.registrationId || '');
+        
+        // Limpiar localStorage
+        localStorage.removeItem('provider_registration_draft');
+        
+        // Mostrar mensaje de éxito
+        alert(
+          '🎉 ¡Registro enviado exitosamente!\n\n' +
+          'Tu solicitud ha sido recibida y está pendiente de revisión.\n' +
+          'Te contactaremos pronto al email: ' + formData.email + '\n\n' +
+          'ID de registro: ' + result.registrationId
+        );
+        
+        // Recargar página
+        window.location.reload();
+      } else {
+        // Mostrar error
+        alert(
+          '❌ Error al enviar el registro\n\n' +
+          result.error + '\n\n' +
+          'Por favor, verifica los datos e intenta de nuevo.'
+        );
+        setIsSubmitting(false);
+      }
+      
+    } catch (error: any) {
+      console.error('Error al enviar:', error);
+      alert('Error inesperado: ' + error.message);
+      setIsSubmitting(false);
+    }
   };
 
   // Agregar servicio
@@ -699,9 +759,24 @@ const ProviderRegistrationForm: React.FC = () => {
             <button
               type="button"
               onClick={handleSubmit}
-              className="px-8 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition shadow-lg"
+              disabled={isSubmitting}
+              className={`px-8 py-3 rounded-lg font-semibold transition shadow-lg flex items-center gap-2 ${
+                isSubmitting
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-700 text-white'
+              }`}
             >
-              🚀 Enviar Solicitud
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Enviando...
+                </>
+              ) : (
+                <>🚀 Enviar Solicitud</>
+              )}
             </button>
           )}
         </div>
