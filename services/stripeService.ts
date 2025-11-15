@@ -80,19 +80,22 @@ export async function createCheckoutSession(
       return { error: 'Plan no encontrado' };
     }
 
-    // Llamar a tu backend/Edge Function para crear la sesión de Stripe
-    const response = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        priceId: plan.priceId,
-        registrationId,
-        userEmail,
-        planName: plan.name
-      }),
-    });
+    // Llamar a la Edge Function de Supabase
+    const response = await fetch(
+      'https://tbtivlwldbwwoclraiue.supabase.co/functions/v1/create-checkout-session',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId: plan.priceId,
+          registrationId,
+          userEmail,
+          planName: plan.name
+        }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error('Error al crear sesión de pago');
