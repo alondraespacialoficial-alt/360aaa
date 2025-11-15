@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import SmartLocationInput from './SmartLocationInput';
 import AIDescriptionHelper from './AIDescriptionHelper';
+import GoogleAuthButton from './GoogleAuthButton';
 import { registerProvider, checkEmailExists } from '../services/providerRegistration';
+import { supabase } from '../services/supabaseClient';
 
 interface Service {
   name: string;
@@ -93,6 +95,24 @@ const ProviderRegistrationForm: React.FC = () => {
   
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [googleUser, setGoogleUser] = useState<any>(null);
+
+  // Detectar usuario de Google y auto-rellenar
+  useEffect(() => {
+    const checkGoogleUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && user.app_metadata.provider === 'google') {
+        setGoogleUser(user);
+        // Auto-fill datos desde Google
+        setFormData(prev => ({
+          ...prev,
+          contactName: prev.contactName || user.user_metadata.full_name || '',
+          email: prev.email || user.email || ''
+        }));
+      }
+    };
+    checkGoogleUser();
+  }, []);
 
   // Limpiar localStorage si es una versión antigua (migración única)
   useEffect(() => {
@@ -354,6 +374,51 @@ const ProviderRegistrationForm: React.FC = () => {
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">📋 Datos Básicos</h2>
             
+            {/* Botón de Google OAuth */}
+            {!googleUser ? (
+              <div className="mb-6">
+                <div className="text-center mb-4">
+                  <p className="text-gray-600 text-sm mb-2">Registra tu negocio más rápido con:</p>
+                </div>
+                <GoogleAuthButton 
+                  text="Continuar con Google"
+                  onSuccess={(user) => {
+                    setGoogleUser(user);
+                    setFormData(prev => ({
+                      ...prev,
+                      contactName: user.user_metadata.full_name || '',
+                      email: user.email || ''
+                    }));
+                  }}
+                />
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-white text-gray-500">o completa manualmente</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-6 p-4 bg-green-50 border-2 border-green-200 rounded-lg flex items-center gap-3">
+                <div className="text-green-600 text-2xl">✓</div>
+                <div className="flex-1">
+                  <p className="font-semibold text-green-800">Conectado con Google</p>
+                  <p className="text-sm text-green-700">{googleUser.email}</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    setGoogleUser(null);
+                  }}
+                  className="text-sm text-green-700 hover:text-green-900 underline"
+                >
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+            
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Nombre del negocio *
@@ -389,13 +454,17 @@ const ProviderRegistrationForm: React.FC = () => {
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Email *
+                {googleUser && <span className="ml-2 text-xs text-green-600 font-normal">(desde Google)</span>}
               </label>
               <input
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 placeholder="Ej: maria@floreriagomez.com"
+                disabled={!!googleUser}
                 className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none ${
+                  googleUser ? 'bg-gray-100 cursor-not-allowed' : ''
+                } ${
                   errors.email ? 'border-red-500' : 'border-gray-300 focus:border-purple-500'
                 }`}
               />
