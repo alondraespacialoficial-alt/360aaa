@@ -1,9 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ProviderRegistrationForm from "../../../components/ProviderRegistrationForm";
+import { supabase } from "../../../services/supabaseClient";
 
 export default function RegistroProveedor() {
   const [showForm, setShowForm] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Detectar si el usuario viene de Google OAuth y saltar directo al formulario
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && user.app_metadata.provider === 'google') {
+        // Usuario autenticado con Google, ir directo al formulario
+        setShowForm(true);
+      }
+      setCheckingAuth(false);
+    };
+    checkUser();
+  }, []);
 
   // Limpiar localStorage cuando el usuario regresa a la landing
   useEffect(() => {
@@ -16,6 +31,18 @@ export default function RegistroProveedor() {
       }
     }
   }, [showForm]);
+
+  // Mostrar loading mientras verifica autenticación
+  if (checkingAuth) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando...</p>
+        </div>
+      </main>
+    );
+  }
 
   if (showForm) {
     return (
