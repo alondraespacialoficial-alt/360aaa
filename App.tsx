@@ -41,8 +41,8 @@ export default function App() {
             <Route path="/proveedor/:id" element={<SupplierDetail />} />
             <Route path="/favoritos" element={<FavoritesPage />} />
             <Route path="/proveedores/planes" element={<PlanesProveedor />} />
-            <Route path="/registro-proveedor" element={<RegistroProveedor />} />
             <Route path="/proveedores/registro" element={<RegistroProveedor />} />
+            <Route path="/registro-proveedor" element={<Navigate to="/proveedores/registro" replace />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/legal" element={<LegalNotice />} />
 
