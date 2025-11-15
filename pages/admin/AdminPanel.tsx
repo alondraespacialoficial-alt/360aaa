@@ -54,6 +54,7 @@ import { supabase } from "../../services/supabaseClient";
 import VideoAdmin from "./VideoAdmin";
 import ThemeToggle from "../../components/ThemeToggle";
 import AIAdminPanel from "../../components/AIAdminPanel";
+import ProviderModerationPanel from "../../components/ProviderModerationPanel";
 
 
 
@@ -750,6 +751,12 @@ const AdminPanel: React.FC = () => {
             {/* Theme Toggle - Posición fija superior derecha */}
             <div className="fixed top-4 right-4 z-50">
                 <ThemeToggle size="md" />
+            </div>
+            
+            {/* Panel de Moderación de Registros */}
+            <div className="mb-10">
+                <h1 className="text-3xl font-bold text-purple-700 mb-6 text-center">🔍 Moderación de Registros</h1>
+                <ProviderModerationPanel />
             </div>
             
             <ManageSuppliers />
