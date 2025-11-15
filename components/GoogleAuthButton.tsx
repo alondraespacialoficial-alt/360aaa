@@ -17,10 +17,18 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
+      // Detectar si estamos en localhost o producción
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const redirectUrl = isLocalhost 
+        ? `${window.location.origin}/proveedores/registro`
+        : 'https://charlitroneventos360.com/proveedores/registro';
+
+      console.log('🔐 Iniciando Google OAuth con redirect:', redirectUrl);
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/proveedores/registro`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -33,7 +41,7 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({
       // El usuario será redirigido a Google y luego de vuelta
       // No necesitamos hacer nada más aquí
     } catch (error: any) {
-      console.error('Error en login con Google:', error);
+      console.error('❌ Error en login con Google:', error);
       setLoading(false);
       if (onError) {
         onError(error.message || 'Error al iniciar sesión con Google');
