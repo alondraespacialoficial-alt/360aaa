@@ -13,6 +13,7 @@ interface ProviderRegistration {
   contact_name: string;
   email: string;
   status: 'pending' | 'approved' | 'rejected';
+  payment_status?: 'pending' | 'completed' | 'failed' | 'cancelled';
   created_at: string;
   updated_at?: string;
   admin_notes?: string;
@@ -50,7 +51,8 @@ const ProviderStatusPage: React.FC = () => {
       if (registrationId) {
         query = query.eq('id', registrationId);
       } else if (email) {
-        query = query.eq('email', email);
+        // Búsqueda más flexible por email (case insensitive)
+        query = query.ilike('email', email.trim());
       }
 
       const { data, error } = await query.order('created_at', { ascending: false }).limit(1);
@@ -58,7 +60,7 @@ const ProviderStatusPage: React.FC = () => {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        setError('No se encontró ningún registro con esos datos');
+        setError(`No se encontró ningún registro con el email: ${email}`);
         return;
       }
 
@@ -233,14 +235,27 @@ const ProviderStatusPage: React.FC = () => {
               <span className="font-medium text-gray-900">{formatDate(registration.created_at)}</span>
             </div>
             {registration.updated_at && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Última actualización:</span>
-                <span className="font-medium text-gray-900">{formatDate(registration.updated_at)}</span>
-              </div>
-            )}
-          </div>
-
-          {registration.categories.length > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Última actualización:</span>
+              <span className="font-medium text-gray-900">{formatDate(registration.updated_at)}</span>
+            </div>
+          )}
+          {registration.payment_status && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Estado del pago:</span>
+              <span className={`font-medium ${
+                registration.payment_status === 'completed' ? 'text-green-600' :
+                registration.payment_status === 'failed' ? 'text-red-600' :
+                'text-yellow-600'
+              }`}>
+                {registration.payment_status === 'completed' && '💳 Pagado'}
+                {registration.payment_status === 'pending' && '⏳ Pendiente de pago'}
+                {registration.payment_status === 'failed' && '❌ Pago fallido'}
+                {registration.payment_status === 'cancelled' && '🚫 Pago cancelado'}
+              </span>
+            </div>
+          )}
+        </div>          {registration.categories.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <p className="text-gray-600 text-sm mb-2">Categorías:</p>
               <div className="flex flex-wrap gap-2">
@@ -322,8 +337,8 @@ const ProviderStatusPage: React.FC = () => {
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>
             ¿Tienes preguntas? Contáctanos en{' '}
-            <a href="mailto:soporte@charlitron360.com" className="text-purple-600 hover:underline">
-              soporte@charlitron360.com
+            <a href="mailto:ventas@charlitron.com" className="text-purple-600 hover:underline">
+              ventas@charlitron.com
             </a>
           </p>
         </div>

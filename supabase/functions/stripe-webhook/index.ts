@@ -145,10 +145,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.log('⏳ Awaiting admin approval...')
     
     try {
-      // Actualizar registro con nota de pago confirmado
+      // Actualizar registro con nota de pago confirmado Y marcar pago como completado
       const { error: updateError } = await supabase
         .from('provider_registrations')
         .update({
+          payment_status: 'completed',
           admin_notes: `✅ Pago confirmado vía Stripe el ${new Date().toLocaleString('es-MX')}. Plan: ${plan.name} (${plan.billing === 'monthly' ? 'Mensual' : 'Anual'}). Pendiente de aprobación manual.`,
           metadata: {
             payment_confirmed_at: new Date().toISOString(),
