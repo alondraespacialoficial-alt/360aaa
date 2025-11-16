@@ -320,7 +320,9 @@ const ProviderStatusPage: React.FC = () => {
               </span>
             </div>
           )}
-        </div>          {registration.categories.length > 0 && (
+        </div>
+        
+        {registration.categories.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <p className="text-gray-600 text-sm mb-2">Categorías:</p>
               <div className="flex flex-wrap gap-2">
