@@ -34,6 +34,7 @@ interface ProviderRegistration {
   facebook_url?: string;
   website?: string;
   status: 'pending' | 'approved' | 'rejected';
+  payment_status?: 'pending' | 'completed' | 'failed' | 'cancelled';
   created_at: string;
   admin_notes?: string;
 }
@@ -282,6 +283,16 @@ const ProviderModerationPanel: React.FC = () => {
                     </div>
                     <p className="text-sm text-gray-600 mt-1">
                       👤 {registration.contact_name} · 📧 {registration.email} · 📱 {registration.phone}
+                      {registration.payment_status === 'completed' && (
+                        <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
+                          💳 PAGADO
+                        </span>
+                      )}
+                      {registration.payment_status === 'pending' && (
+                        <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">
+                          ⏳ SIN PAGAR
+                        </span>
+                      )}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {registration.categories.map(cat => (
@@ -336,12 +347,28 @@ const ProviderModerationPanel: React.FC = () => {
               {/* Información de contacto */}
               <div>
                 <h3 className="font-bold text-lg mb-2">📞 Información de Contacto</h3>
-                <div className="grid md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
-                  <div><strong>Nombre:</strong> {selectedRegistration.contact_name}</div>
-                  <div><strong>Email:</strong> {selectedRegistration.email}</div>
-                  <div><strong>Teléfono:</strong> {selectedRegistration.phone}</div>
-                  <div><strong>WhatsApp:</strong> {selectedRegistration.whatsapp}</div>
+              <div className="grid md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                <div><strong>Nombre:</strong> {selectedRegistration.contact_name}</div>
+                <div><strong>Email:</strong> {selectedRegistration.email}</div>
+                <div><strong>Teléfono:</strong> {selectedRegistration.phone}</div>
+                <div><strong>WhatsApp:</strong> {selectedRegistration.whatsapp}</div>
+                <div className="md:col-span-2">
+                  <strong>Estado del pago:</strong>
+                  <span className={`ml-2 px-3 py-1 rounded-full text-sm font-bold ${
+                    selectedRegistration.payment_status === 'completed' 
+                      ? 'bg-green-100 text-green-700' 
+                      : selectedRegistration.payment_status === 'failed'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {selectedRegistration.payment_status === 'completed' && '💳 PAGADO'}
+                    {selectedRegistration.payment_status === 'pending' && '⏳ PENDIENTE DE PAGO'}
+                    {selectedRegistration.payment_status === 'failed' && '❌ PAGO FALLIDO'}
+                    {selectedRegistration.payment_status === 'cancelled' && '🚫 PAGO CANCELADO'}
+                    {!selectedRegistration.payment_status && '❓ NO DEFINIDO'}
+                  </span>
                 </div>
+              </div>
               </div>
 
               {/* Ubicación */}
