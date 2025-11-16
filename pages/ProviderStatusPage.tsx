@@ -1,5 +1,5 @@
 /**
- * Página de Estado del Proveedor
+ * Página de Estado del Proveedor - Con formulario de búsqueda
  * Permite consultar el estado de una solicitud de registro
  */
 
@@ -23,8 +23,10 @@ interface ProviderRegistration {
 const ProviderStatusPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [registration, setRegistration] = useState<ProviderRegistration | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchEmail, setSearchEmail] = useState('');
+  const [searching, setSearching] = useState(false);
 
   const email = searchParams.get('email');
   const registrationId = searchParams.get('id');
@@ -35,11 +37,42 @@ const ProviderStatusPage: React.FC = () => {
   useEffect(() => {
     if (email || registrationId) {
       fetchRegistrationStatus();
-    } else {
-      setError('Parámetro requerido: email o id de registro');
-      setLoading(false);
     }
   }, [email, registrationId]);
+
+  const handleEmailSearch = async (emailToSearch: string) => {
+    if (!emailToSearch.trim()) {
+      setError('Por favor ingresa un email válido');
+      return;
+    }
+
+    setSearching(true);
+    setError(null);
+    setRegistration(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('provider_registrations')
+        .select('*')
+        .ilike('email', emailToSearch.trim())
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        setError(`No se encontró ningún registro con el email: ${emailToSearch}`);
+        return;
+      }
+
+      setRegistration(data[0]);
+    } catch (error: any) {
+      console.error('Error fetching registration:', error);
+      setError('Error al consultar el estado: ' + error.message);
+    } finally {
+      setSearching(false);
+    }
+  };
 
   const fetchRegistrationStatus = async () => {
     setLoading(true);
@@ -180,8 +213,44 @@ const ProviderStatusPage: React.FC = () => {
           </p>
         </div>
 
+        {/* Formulario de búsqueda - Solo mostrar si no hay registro cargado */}
+        {!registration && !loading && (
+          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 text-center">
+              🔍 Consulta el Estado de tu Solicitud
+            </h2>
+            <p className="text-gray-600 text-center mb-6">
+              Ingresa el email que usaste para registrarte
+            </p>
+            
+            <div className="max-w-md mx-auto">
+              <div className="flex gap-3">
+                <input
+                  type="email"
+                  value={searchEmail}
+                  onChange={(e) => setSearchEmail(e.target.value)}
+                  placeholder="ejemplo@correo.com"
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-500 text-lg"
+                  onKeyPress={(e) => e.key === 'Enter' && handleEmailSearch(searchEmail)}
+                />
+                <button
+                  onClick={() => handleEmailSearch(searchEmail)}
+                  disabled={searching || !searchEmail.trim()}
+                  className={`px-6 py-3 rounded-lg font-medium text-white transition ${
+                    searching || !searchEmail.trim()
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-purple-600 hover:bg-purple-700'
+                  }`}
+                >
+                  {searching ? '🔍' : '📋 Buscar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Mensaje de éxito post-pago */}
-        {success && sessionId && (
+        {success && sessionId && registration && (
           <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-6">
             <div className="text-center">
               <div className="text-4xl mb-3">🎉</div>
@@ -198,7 +267,8 @@ const ProviderStatusPage: React.FC = () => {
           </div>
         )}
 
-        {/* Tarjeta principal de estado */}
+        {/* Tarjeta principal de estado - Solo mostrar si hay registro */}
+        {registration && (
         <div className={`${statusInfo.bgColor} border-2 ${statusInfo.borderColor} rounded-xl p-8 mb-6`}>
           <div className="text-center">
             <div className="text-6xl mb-4">{statusInfo.icon}</div>
@@ -332,6 +402,7 @@ const ProviderStatusPage: React.FC = () => {
             </div>
           )}
         </div>
+        )}
 
         {/* Footer informativo */}
         <div className="mt-8 text-center text-sm text-gray-500">
