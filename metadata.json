@@ -1,0 +1,5 @@
+{
+  "name": "Charlitron Eventos 360 Panel",
+  "description": "An embeddable panel for browsing and quoting services from various event suppliers. Manage categories, suppliers, and services through a dedicated admin section.",
+  "requestFramePermissions": []
+}
