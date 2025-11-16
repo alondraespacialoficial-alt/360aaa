@@ -48,30 +48,31 @@ interface RegistrationStats {
 
 const ProviderModerationPanel: React.FC = () => {
   const { user } = useAuth();
-  const [pendingRegistrations, setPendingRegistrations] = useState<ProviderRegistration[]>([]);
+  const [registrations, setRegistrations] = useState<ProviderRegistration[]>([]);
   const [stats, setStats] = useState<RegistrationStats | null>(null);
   const [selectedRegistration, setSelectedRegistration] = useState<ProviderRegistration | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'pending' | 'approved' | 'rejected'>('pending');
 
-  // Cargar registros pendientes y estadísticas
+  // Cargar registros por filtro y estadísticas
   useEffect(() => {
-    fetchPendingRegistrations();
+    fetchRegistrations();
     fetchStats();
-  }, []);
+  }, [activeFilter]);
 
-  const fetchPendingRegistrations = async () => {
+  const fetchRegistrations = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('provider_registrations')
         .select('*')
-        .eq('status', 'pending')
+        .eq('status', activeFilter)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPendingRegistrations(data || []);
+      setRegistrations(data || []);
     } catch (error: any) {
       console.error('Error fetching registrations:', error);
       alert('Error al cargar registros: ' + error.message);
@@ -112,7 +113,7 @@ const ProviderModerationPanel: React.FC = () => {
       alert(`✅ Registro aprobado!\n\nProveedor creado con ID: ${data}\nYa aparece en el directorio público.`);
       
       // Recargar lista
-      await fetchPendingRegistrations();
+      await fetchRegistrations();
       await fetchStats();
       setSelectedRegistration(null);
     } catch (error: any) {
@@ -151,7 +152,7 @@ const ProviderModerationPanel: React.FC = () => {
       alert('❌ Registro rechazado\n\nEl solicitante puede ver la razón en su email.');
       
       // Recargar lista
-      await fetchPendingRegistrations();
+      await fetchRegistrations();
       await fetchStats();
       setSelectedRegistration(null);
       setRejectionReason('');
@@ -200,18 +201,54 @@ const ProviderModerationPanel: React.FC = () => {
         </div>
       )}
 
-      {/* Lista de registros pendientes */}
+      {/* Pestañas de filtro */}
       <div className="bg-white border border-gray-200 rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900">
-            📋 Registros Pendientes ({pendingRegistrations.length})
-          </h2>
-          <button
-            onClick={fetchPendingRegistrations}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition"
-          >
-            🔄 Actualizar
-          </button>
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-900">
+              📋 Gestión de Registros
+            </h2>
+            <button
+              onClick={fetchRegistrations}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition"
+            >
+              🔄 Actualizar
+            </button>
+          </div>
+          
+          {/* Pestañas */}
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveFilter('pending')}
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition ${
+                activeFilter === 'pending'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-white'
+              }`}
+            >
+              ⏳ Pendientes ({stats?.pending_count || 0})
+            </button>
+            <button
+              onClick={() => setActiveFilter('approved')}
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition ${
+                activeFilter === 'approved'
+                  ? 'bg-green-600 text-white shadow'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-white'
+              }`}
+            >
+              ✅ Aprobados ({stats?.approved_count || 0})
+            </button>
+            <button
+              onClick={() => setActiveFilter('rejected')}
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition ${
+                activeFilter === 'rejected'
+                  ? 'bg-red-600 text-white shadow'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-white'
+              }`}
+            >
+              ❌ Rechazados ({stats?.rejected_count || 0})
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -219,17 +256,30 @@ const ProviderModerationPanel: React.FC = () => {
             <div className="animate-spin h-8 w-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-2"></div>
             Cargando registros...
           </div>
-        ) : pendingRegistrations.length === 0 ? (
+        ) : registrations.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            ✅ No hay registros pendientes de revisión
+            {activeFilter === 'pending' && '✅ No hay registros pendientes de revisión'}
+            {activeFilter === 'approved' && '📋 No hay registros aprobados aún'}
+            {activeFilter === 'rejected' && '📋 No hay registros rechazados'}
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
-            {pendingRegistrations.map(registration => (
+            {registrations.map(registration => (
               <div key={registration.id} className="p-6 hover:bg-gray-50 transition">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900">{registration.business_name}</h3>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-bold text-gray-900">{registration.business_name}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                        registration.status === 'pending' ? 'bg-blue-100 text-blue-700' :
+                        registration.status === 'approved' ? 'bg-green-100 text-green-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {registration.status === 'pending' && '⏳ PENDIENTE'}
+                        {registration.status === 'approved' && '✅ APROBADO'}
+                        {registration.status === 'rejected' && '❌ RECHAZADO'}
+                      </span>
+                    </div>
                     <p className="text-sm text-gray-600 mt-1">
                       👤 {registration.contact_name} · 📧 {registration.email} · 📱 {registration.phone}
                     </p>
@@ -243,6 +293,11 @@ const ProviderModerationPanel: React.FC = () => {
                     <p className="text-xs text-gray-500 mt-2">
                       ⏰ {formatDate(registration.created_at)}
                     </p>
+                    {registration.status === 'rejected' && registration.admin_notes && (
+                      <p className="text-xs text-red-600 mt-1 bg-red-50 p-2 rounded border-l-2 border-red-300">
+                        💭 <strong>Razón:</strong> {registration.admin_notes}
+                      </p>
+                    )}
                   </div>
                   
                   <button
@@ -384,31 +439,50 @@ const ProviderModerationPanel: React.FC = () => {
                 />
               </div>
 
-              {/* Botones de acción */}
-              <div className="flex gap-4 pt-4 border-t">
-                <button
-                  onClick={() => handleApprove(selectedRegistration)}
-                  disabled={processing}
-                  className={`flex-1 py-3 rounded-lg font-bold transition ${
-                    processing 
-                      ? 'bg-gray-300 cursor-not-allowed' 
-                      : 'bg-green-600 hover:bg-green-700 text-white'
-                  }`}
-                >
-                  {processing ? 'Procesando...' : '✅ Aprobar y Publicar'}
-                </button>
-                <button
-                  onClick={() => handleReject(selectedRegistration)}
-                  disabled={processing}
-                  className={`flex-1 py-3 rounded-lg font-bold transition ${
-                    processing 
-                      ? 'bg-gray-300 cursor-not-allowed' 
-                      : 'bg-red-600 hover:bg-red-700 text-white'
-                  }`}
-                >
-                  {processing ? 'Procesando...' : '❌ Rechazar'}
-                </button>
-              </div>
+              {/* Botones de acción - Solo para pendientes */}
+              {selectedRegistration.status === 'pending' && (
+                <div className="flex gap-4 pt-4 border-t">
+                  <button
+                    onClick={() => handleApprove(selectedRegistration)}
+                    disabled={processing}
+                    className={`flex-1 py-3 rounded-lg font-bold transition ${
+                      processing 
+                        ? 'bg-gray-300 cursor-not-allowed' 
+                        : 'bg-green-600 hover:bg-green-700 text-white'
+                    }`}
+                  >
+                    {processing ? 'Procesando...' : '✅ Aprobar y Publicar'}
+                  </button>
+                  <button
+                    onClick={() => handleReject(selectedRegistration)}
+                    disabled={processing}
+                    className={`flex-1 py-3 rounded-lg font-bold transition ${
+                      processing 
+                        ? 'bg-gray-300 cursor-not-allowed' 
+                        : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
+                  >
+                    {processing ? 'Procesando...' : '❌ Rechazar'}
+                  </button>
+                </div>
+              )}
+              
+              {/* Info para registros ya procesados */}
+              {selectedRegistration.status !== 'pending' && (
+                <div className="pt-4 border-t text-center">
+                  <p className={`text-lg font-bold ${
+                    selectedRegistration.status === 'approved' ? 'text-green-700' : 'text-red-700'
+                  }`}>
+                    {selectedRegistration.status === 'approved' && '✅ Este registro ya fue aprobado'}
+                    {selectedRegistration.status === 'rejected' && '❌ Este registro fue rechazado'}
+                  </p>
+                  {selectedRegistration.admin_notes && (
+                    <p className="text-sm text-gray-600 mt-2 bg-gray-50 p-3 rounded-lg">
+                      <strong>Razón:</strong> {selectedRegistration.admin_notes}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
