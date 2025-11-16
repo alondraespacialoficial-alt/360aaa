@@ -71,7 +71,7 @@ serve(async (req) => {
         }
       ],
       mode: 'subscription',
-      success_url: `${origin}/proveedores/registro?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/proveedor/estado?id=${registrationId}&success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/proveedores/registro?canceled=true`,
       metadata: {
         registration_id: registrationId || '',

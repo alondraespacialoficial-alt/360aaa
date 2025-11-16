@@ -897,6 +897,19 @@ const ProviderRegistrationForm: React.FC = () => {
             </button>
           ) : null}
         </div>
+
+        {/* Enlace para consultar estado */}
+        <div className="mt-8 text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-sm text-gray-600 mb-2">
+            ¿Ya enviaste tu solicitud? 
+          </p>
+          <a 
+            href="/proveedor/estado" 
+            className="text-purple-600 hover:text-purple-700 font-medium text-sm hover:underline"
+          >
+            📋 Consultar estado de mi solicitud →
+          </a>
+        </div>
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ import SupplierDetail from './pages/public/SupplierDetail';
 import FavoritesPage from './pages/public/FavoritesPage';
 import PlanesProveedor from './src/pages/proveedores/planes';
 import RegistroProveedor from './src/pages/proveedores/registro';
+import ProviderStatusPage from './pages/ProviderStatusPage';
 
 // Admin pages and layout
 import AdminLogin from './pages/admin/AdminLogin';
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/favoritos" element={<FavoritesPage />} />
             <Route path="/proveedores/planes" element={<PlanesProveedor />} />
             <Route path="/proveedores/registro" element={<RegistroProveedor />} />
+            <Route path="/proveedor/estado" element={<ProviderStatusPage />} />
             <Route path="/registro-proveedor" element={<Navigate to="/proveedores/registro" replace />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/legal" element={<LegalNotice />} />
