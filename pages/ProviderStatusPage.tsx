@@ -1,8 +1,3 @@
-/**
- * Página de Estado del Proveedor - Con formulario de búsqueda
- * Permite consultar el estado de una solicitud de registro
- */
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '../services/supabaseClient';

@@ -13,7 +13,7 @@ import SupplierDetail from './pages/public/SupplierDetail';
 import FavoritesPage from './pages/public/FavoritesPage';
 import PlanesProveedor from './src/pages/proveedores/planes';
 import RegistroProveedor from './src/pages/proveedores/registro';
-import ProviderStatusPage from './pages/ProviderStatusPage';
+import ProviderStatusPage from './pages/ProviderStatusPageNew';
 
 // Admin pages and layout
 import AdminLogin from './pages/admin/AdminLogin';
