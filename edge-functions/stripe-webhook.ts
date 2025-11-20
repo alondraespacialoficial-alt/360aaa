@@ -36,13 +36,11 @@
         return new Response('Webhook configuration error', { status: 500 });
     }
 
-    try {
-        const body = await req.text();
-        const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-        
-        console.log(`✅ Received event: ${event.type} (ID: ${event.id})`);
-
-        // Manejar diferentes tipos de eventos
+  try {
+    const body = await req.text();
+    const event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+    
+    console.log(`✅ Received event: ${event.type} (ID: ${event.id})`);        // Manejar diferentes tipos de eventos
         switch (event.type) {
         case 'checkout.session.completed': {
             const session = event.data.object as any;
@@ -179,19 +177,32 @@
 
         console.log('✅ Subscription created:', data.id);
 
-        // Si hay registration_id, aprobar automáticamente
+        // Si hay registration_id, marcar pago como completado (NO aprobar automáticamente)
         if (registrationId) {
-        const { error: approveError } = await supabase.rpc('approve_provider_registration', {
-            registration_id: registrationId,
-            admin_user_id: null
-        });
+        console.log('💳 Payment confirmed for registration:', registrationId);
+        console.log('⏳ Awaiting admin approval...');
+        
+        const { error: updateError } = await supabase
+            .from('provider_registrations')
+            .update({
+            admin_notes: `✅ Pago confirmado vía Stripe el ${new Date().toLocaleString('es-MX')}. Plan: ${plan.name} (${plan.billing === 'monthly' ? 'Mensual' : 'Anual'}). Pendiente de aprobación manual.`,
+            metadata: {
+                payment_confirmed_at: new Date().toISOString(),
+                stripe_subscription_id: subscriptionId,
+                plan_id: plan.id,
+                payment_status: 'completed'
+            }
+            })
+            .eq('id', registrationId);
 
-        if (approveError) {
-            console.error('❌ Error auto-approving registration:', approveError);
-            throw approveError;
+        if (updateError) {
+            console.error('❌ Error updating registration with payment info:', updateError);
         } else {
-            console.log('✅ Registration auto-approved:', registrationId);
+            console.log('✅ Registration updated with payment confirmation');
+            console.log('📧 Admin should review and approve manually in admin panel');
         }
+        } else {
+        console.warn('⚠️ No registration ID provided, payment recorded but cannot link to registration');
         }
 
     } catch (error) {
@@ -200,56 +211,68 @@
     }
     }
 
-    async function handleSubscriptionUpdated(subscription: any) {
-    try {
-        console.log(`🔄 Updating subscription: ${subscription.id}`);
-        
-        const { error } = await supabase
+async function handleSubscriptionUpdated(subscription: any) {
+  try {
+    console.log(`🔄 Processing subscription update/create: ${subscription.id}`);
+    console.log(`Status: ${subscription.status}, Metadata:`, subscription.metadata);
+    
+    // Verificar si ya existe la suscripción
+    const { data: existing } = await supabase
+      .from('provider_subscriptions')
+      .select('id')
+      .eq('stripe_subscription_id', subscription.id)
+      .single();
+
+    if (existing) {
+      // Actualizar suscripción existente
+      const { error } = await supabase
         .from('provider_subscriptions')
         .update({
-            status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
+          status: subscription.status,
+          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
         })
         .eq('stripe_subscription_id', subscription.id);
 
-        if (error) {
+      if (error) {
         console.error('❌ Error updating subscription:', error);
         throw error;
-        }
-
-        console.log('✅ Subscription updated successfully');
-    } catch (error) {
-        console.error('❌ Error in handleSubscriptionUpdated:', error);
-        throw error;
+      }
+      console.log('✅ Subscription updated successfully');
+    } else {
+      console.log('ℹ️ Subscription not found in DB, will be created by checkout.session.completed');
     }
-    }
+  } catch (error) {
+    console.error('❌ Error in handleSubscriptionUpdated:', error);
+    throw error;
+  }
+}async function handleSubscriptionDeleted(subscription: any) {
+  try {
+    console.log(`🗑️ Canceling subscription: ${subscription.id}`);
+    
+    const canceledAt = subscription.canceled_at 
+      ? new Date(subscription.canceled_at * 1000).toISOString() 
+      : new Date().toISOString();
+    
+    const { error } = await supabase
+      .from('provider_subscriptions')
+      .update({
+        status: 'canceled',
+        canceled_at: canceledAt
+      })
+      .eq('stripe_subscription_id', subscription.id);
 
-    async function handleSubscriptionDeleted(subscription: any) {
-    try {
-        console.log(`🗑️ Canceling subscription: ${subscription.id}`);
-        
-        const { error } = await supabase
-        .from('provider_subscriptions')
-        .update({
-            status: 'canceled',
-            canceled_at: new Date().toISOString()
-        })
-        .eq('stripe_subscription_id', subscription.id);
-
-        if (error) {
-        console.error('❌ Error canceling subscription:', error);
-        throw error;
-        }
-
-        console.log('✅ Subscription canceled successfully');
-    } catch (error) {
-        console.error('❌ Error in handleSubscriptionDeleted:', error);
-        throw error;
-    }
+    if (error) {
+      console.error('❌ Error canceling subscription:', error);
+      throw error;
     }
 
-    async function handleInvoicePaymentSucceeded(invoice: any) {
+    console.log('✅ Subscription canceled successfully');
+  } catch (error) {
+    console.error('❌ Error in handleSubscriptionDeleted:', error);
+    throw error;
+  }
+}    async function handleInvoicePaymentSucceeded(invoice: any) {
     try {
         console.log(`💰 Payment succeeded for invoice: ${invoice.id}`);
         
@@ -268,6 +291,7 @@
         console.log(`💸 Payment failed for invoice: ${invoice.id}`);
         
         if (invoice.subscription) {
+        // Marcar suscripción como atrasada
         const { error } = await supabase
             .from('provider_subscriptions')
             .update({
@@ -281,6 +305,27 @@
         }
 
         console.log('✅ Subscription marked as past_due');
+        
+        // Notificar en el registro si existe
+        const { data: subscription } = await supabase
+            .from('provider_subscriptions')
+            .select('registration_id')
+            .eq('stripe_subscription_id', invoice.subscription)
+            .single();
+        
+        if (subscription?.registration_id) {
+            await supabase
+            .from('provider_registrations')
+            .update({
+                admin_notes: `❌ Pago fallido el ${new Date().toLocaleString('es-MX')}. Se requiere actualizar método de pago.`,
+                metadata: {
+                payment_status: 'failed',
+                payment_failed_at: new Date().toISOString(),
+                stripe_invoice_id: invoice.id
+                }
+            })
+            .eq('id', subscription.registration_id);
+        }
         }
     } catch (error) {
         console.error('❌ Error in handleInvoicePaymentFailed:', error);
