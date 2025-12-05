@@ -18,6 +18,23 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              // Separa React y ReactDOM en su propio chunk
+              'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+              // Separa Supabase (es grande)
+              'supabase-vendor': ['@supabase/supabase-js'],
+              // Separa Stripe
+              'stripe-vendor': ['@stripe/stripe-js', 'stripe'],
+              // Separa Google AI (Gemini)
+              'ai-vendor': ['@google/generative-ai'],
+            }
+          }
+        },
+        chunkSizeWarningLimit: 600, // Aumenta el límite a 600kb para evitar warnings innecesarios
       }
     };
 });
