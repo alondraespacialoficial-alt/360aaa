@@ -92,27 +92,20 @@ export async function registerProvider(
   data: ProviderRegistrationData
 ): Promise<RegistrationResponse> {
   try {
-    console.log('📝 Iniciando registro de proveedor:', data.businessName);
     
     // 1. Subir imagen de perfil (si existe)
     let profileImageUrl: string | null = null;
     if (data.profileImage) {
-      console.log('📸 Subiendo imagen de perfil...');
       profileImageUrl = await uploadImage(
         data.profileImage,
         'profiles',
         data.businessName
       );
-      
-      if (!profileImageUrl) {
-        console.warn('⚠️ No se pudo subir la imagen de perfil, continuando sin ella');
-      }
     }
     
     // 2. Subir imágenes de galería
     const galleryUrls: string[] = [];
     if (data.galleryImages.length > 0) {
-      console.log(`📸 Subiendo ${data.galleryImages.length} imágenes de galería...`);
       
       for (const image of data.galleryImages) {
         const url = await uploadImage(image, 'gallery', data.businessName);
@@ -120,8 +113,6 @@ export async function registerProvider(
           galleryUrls.push(url);
         }
       }
-      
-      console.log(`✅ ${galleryUrls.length}/${data.galleryImages.length} imágenes subidas`);
     }
     
     // 3. Preparar datos para insertar
@@ -158,9 +149,6 @@ export async function registerProvider(
         screen_resolution: `${window.screen.width}x${window.screen.height}`
       }
     };
-    
-    // 4. Insertar en base de datos usando función RPC
-    console.log('💾 Guardando en base de datos...');
     
     try {
       const { data: result, error } = await supabase.rpc('insert_provider_registration_public', {
@@ -206,8 +194,6 @@ export async function registerProvider(
         };
       }
       
-      console.log('✅ Registro completado exitosamente! ID:', registrationId);
-      
       return {
         success: true,
         registrationId: registrationId
@@ -217,7 +203,6 @@ export async function registerProvider(
       console.error('❌ Error RPC:', rpcError);
       
       // Fallback: intentar inserción directa
-      console.log('🔄 Intentando inserción directa como fallback...');
       
       const { data: fallbackResult, error: fallbackError } = await supabase
         .from('provider_registrations')
@@ -232,8 +217,6 @@ export async function registerProvider(
           error: `Error al guardar: ${fallbackError.message}`
         };
       }
-      
-      console.log('✅ Registro completado con fallback! ID:', fallbackResult.id);
       
       return {
         success: true,

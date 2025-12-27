@@ -89,12 +89,6 @@ class AIAssistantService {
     if (candidates.length > 0) {
       this.activeContext.provider_name = candidates[0].provider_name;
     }
-    
-    console.log('🎯 Updated active context:', {
-      service_type: this.activeContext.service_type,
-      provider_name: this.activeContext.provider_name,
-      candidates_count: candidates.length
-    });
   }
 
   private generateSessionId(): string {
@@ -226,14 +220,6 @@ class AIAssistantService {
       if (reviewsError) console.error('❌ Reviews error:', reviewsError);
       if (analyticsError) console.error('❌ Analytics error:', analyticsError);
       if (servicesError) console.error('❌ Services error:', servicesError);
-      
-      console.log('📊 Context data loaded:', {
-        providers: providers?.length || 0,
-        categories: categories?.length || 0, 
-        reviews: reviews?.length || 0,
-        analytics: recentAnalytics?.length || 0,
-        services: services?.length || 0
-      });
 
       // Calcular estadísticas
       const totalProviders = providers?.length || 0;
@@ -894,14 +880,6 @@ NO busques nuevos proveedores, solo explica el servicio del proveedor mencionado
       let city = locationData.city;
       let state = locationData.state;
 
-      console.log('🎯 QUESTION ANALYSIS:', { 
-        question: question,
-        service_slug: service_slug, 
-        city: city, 
-        state: state, 
-        budget: budget 
-      });
-
       if (this.pendingClarification) {
         // If the current message looks like an answer (short and contains location/budget), merge it
         const looksLikeBudget = !!budget;
@@ -1012,7 +990,6 @@ NO busques nuevos proveedores, solo explica el servicio del proveedor mencionado
           ];
           
           if (rejectionPatterns.some(pattern => pattern.test(lowerQ))) {
-            console.log('❌ RECHAZO detectado - limpiando contexto y buscando alternativas');
             this.activeContext = { service_type: null, provider_name: null, last_candidates: null };
             return true; // Nueva búsqueda
           }
@@ -1038,10 +1015,6 @@ NO busques nuevos proveedores, solo explica el servicio del proveedor mencionado
           ];
           
           if (followUpPatterns.some(pattern => pattern.test(lowerQ))) {
-            console.log('🔄 Pregunta de SEGUIMIENTO - usando contexto activo:', {
-              service: this.activeContext.service_type,
-              provider: this.activeContext.provider_name
-            });
             return 'follow_up'; // Valor especial para usar contexto existente
           }
         }
@@ -1070,11 +1043,9 @@ NO busques nuevos proveedores, solo explica el servicio del proveedor mencionado
         ];
         
         if (searchPatterns.some(pattern => pattern.test(lowerQ))) {
-          console.log('🎯 Pregunta de búsqueda específica:', q);
           return true;
         }
         
-        console.log('❓ Pregunta neutral, tratando como conversacional:', q);
         return false; // Cambio: por defecto NO buscar si no es claramente específica
       };
 
@@ -1083,7 +1054,6 @@ NO busques nuevos proveedores, solo explica el servicio del proveedor mencionado
       
       if (queryType === 'follow_up') {
         // Usar contexto existente para preguntas de seguimiento
-        console.log('🔄 Usando candidatos del contexto activo');
         candidates = this.activeContext.last_candidates || [];
       } else if (queryType === true) {
         // Nueva búsqueda específica - limpiar contexto
@@ -1095,7 +1065,6 @@ NO busques nuevos proveedores, solo explica el servicio del proveedor mencionado
         // Detectar búsqueda de grupos musicales en vivo
         if (/(busco|necesito|quiero).*(grupo musical|banda|mariachi|trio|cuarteto|grupo.*(cantar|tocar))/i.test(question) ||
             /grupo.*(musical|cantar|tocar|en vivo)/i.test(question)) {
-          console.log('🎵 INTERCEPTADO: Búsqueda de grupo musical - respuesta directa');
           
           const noMusicalGroupResponse = `En nuestro catálogo actual no tenemos grupos musicales en vivo (mariachis, bandas, tríos). 
 
@@ -1127,7 +1096,6 @@ Como alternativa, tenemos:
         
         // Detectar búsqueda de restaurantes/catering completo
         if (/(busco|necesito|quiero).*(restaurant|restaurante|catering completo|banquete|comida completa)/i.test(question)) {
-          console.log('🍽️ INTERCEPTADO: Búsqueda de restaurant - respuesta directa');
           
           const noRestaurantResponse = `En nuestro catálogo actual no tenemos restaurantes o servicios de catering completo. 
 
@@ -1158,18 +1126,12 @@ Para un restaurant o catering completo te recomiendo contactar directamente con 
         }
         
         try {
-          console.log('🔍 Búsqueda de proveedores:', { service_slug, city, state, budget });
           candidates = await getProvidersForQuery({ service_slug, city, state, budget, limit: 50 });
-          console.log('✅ Candidatos encontrados:', candidates.length);
-          if (candidates.length > 0) {
-            console.log('📊 Primer candidato:', candidates[0]);
-          }
         } catch (err) {
           console.error('❌ Error obteniendo candidatos:', err);
           candidates = [];
         }
       } else {
-        console.log('⏭️ Saltando búsqueda de proveedores por pregunta genérica');
         candidates = [];
       }
 
@@ -1184,7 +1146,6 @@ Para un restaurant o catering completo te recomiendo contactar directamente con 
 
       // Si no hay candidatos después del ranking, buscar sin filtros de ubicación
       if (!topK || topK.length === 0) {
-        console.log('⚠️ No candidates found with location filter, trying without filters...');
         
         try {
           // Buscar sin filtros de ubicación
@@ -1193,7 +1154,6 @@ Para un restaurant o catering completo te recomiendo contactar directamente con 
           const generalTopK = allRanked.slice(0, 3);
           
           if (generalTopK.length > 0) {
-            console.log('✅ Found general candidates:', generalTopK.length);
             // Permitir que Gemini responda con recomendaciones generales
             const generalContext = context + '\n\nPROVEEDORES DISPONIBLES (GENERALES):\n' + 
               JSON.stringify(generalTopK.map(p => ({
@@ -1341,14 +1301,6 @@ IMPORTANTE: Si la conversación previa era sobre un servicio específico (video/
 `;
       }
     }
-
-    // Debug: verificar información de contacto
-    console.log('📞 Contact info debug:', contextJSON.map(p => ({
-      name: p.provider_name,
-      whatsapp: p.contact_whatsapp,
-      phone: p.contact_phone,
-      email: p.contact_email
-    })));
 
     const enrichedContext = context + conversationContext + '\n\nPROVEEDORES CANDIDATOS (TOP ' + topK.length + '):\n' + JSON.stringify(contextJSON, null, 2);
 

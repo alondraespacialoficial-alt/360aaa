@@ -13,8 +13,6 @@ export async function getProviderFullDetail(provider_id: string) {
     };
   }
 
-  console.log('🔍 Obteniendo detalles completos para proveedor:', provider_id);
-
   // Consulta proveedor
   const { data: provider, error: providerError } = await supabase
     .from('providers')
@@ -24,8 +22,6 @@ export async function getProviderFullDetail(provider_id: string) {
 
   if (providerError) {
     console.error('❌ Error obteniendo proveedor:', providerError.message);
-  } else {
-    console.log('✅ Proveedor encontrado:', provider?.name);
   }
 
   // Consulta servicios
@@ -35,9 +31,7 @@ export async function getProviderFullDetail(provider_id: string) {
     .eq('provider_id', provider_id);
 
   if (servicesError) {
-    console.warn('⚠️ Error obteniendo servicios:', servicesError.message);
-  } else {
-    console.log('✅ Servicios encontrados:', services?.length || 0);
+    // Error obteniendo servicios
   }
 
   // Consulta reseñas
@@ -48,9 +42,7 @@ export async function getProviderFullDetail(provider_id: string) {
     .order('created_at', { ascending: false });
 
   if (reviewsError) {
-    console.warn('⚠️ Error obteniendo reseñas:', reviewsError.message);
-  } else {
-    console.log('✅ Reseñas encontradas:', reviews?.length || 0);
+    // Error obteniendo reseñas
   }
 
   // Consulta media
@@ -61,9 +53,7 @@ export async function getProviderFullDetail(provider_id: string) {
     .order('sort_order', { ascending: true });
 
   if (mediaError) {
-    console.warn('⚠️ Error obteniendo media:', mediaError.message);
-  } else {
-    console.log('✅ Media encontrada:', media?.length || 0);
+    // Error obteniendo media
   }
 
   // Consulta categorías del proveedor con datos completos
@@ -81,7 +71,7 @@ export async function getProviderFullDetail(provider_id: string) {
     .eq('provider_id', provider_id);
 
   if (providerCategoriesError) {
-    console.warn('⚠️ Error obteniendo categorías:', providerCategoriesError.message);
+    // Error obteniendo categorías
   }
 
   // Consulta perfiles de usuarios que dejaron reseña
@@ -94,10 +84,6 @@ export async function getProviderFullDetail(provider_id: string) {
         .select('id, full_name, role, created_at')
         .in('id', userIds);
       profiles = profilesData || [];
-      
-      if (profilesError) {
-        console.warn('⚠️ Error obteniendo perfiles:', profilesError.message);
-      }
     }
   }
 
@@ -285,7 +271,6 @@ export async function getProvidersForQuery(options: {
 }) {
   const { service_slug, city, state, budget, limit = 50 } = options;
   try {
-    console.log('🔍 getProvidersForQuery called with:', { service_slug, city, state, budget, limit });
     
     // Primero obtener todos los proveedores activos
     const { data: providersData, error: providersError } = await supabase
@@ -300,21 +285,7 @@ export async function getProvidersForQuery(options: {
     }
     
     if (!providersData || providersData.length === 0) {
-      console.log('⚠️ No providers found in database');
       return [];
-    }
-    
-    console.log('✅ Found providers:', providersData.length);
-    
-    // Debug: verificar estructura de datos de contacto
-    if (providersData.length > 0) {
-      console.log('📞 Provider data structure sample:', {
-        provider: providersData[0].name,
-        fields: Object.keys(providersData[0]),
-        contact_field: providersData[0].contact,
-        whatsapp_field: providersData[0].whatsapp,
-        phone_field: providersData[0].phone
-      });
     }
     
     // Obtener servicios para estos proveedores con filtrado por tipo
@@ -325,7 +296,6 @@ export async function getProvidersForQuery(options: {
     
     // Filtrar servicios por categoría si se especifica
     if (service_slug) {
-      console.log('🎯 Filtering services by type:', service_slug);
       
       // Mapeo de service_slug a palabras clave para búsqueda (expandido)
       const serviceKeywords: Record<string, string[]> = {
@@ -457,7 +427,6 @@ export async function getProvidersForQuery(options: {
       };
       
       const keywords = serviceKeywords[service_slug] || [service_slug];
-      console.log('🔍 Searching for keywords:', keywords);
       
       // Construir filtro OR para buscar en name y description
       const orConditions = keywords.flatMap(keyword => [
@@ -469,21 +438,10 @@ export async function getProvidersForQuery(options: {
     }
       
     const { data: servicesData, error: servicesError } = await servicesQuery;
-    
-    // Debug: mostrar qué servicios se encontraron
-    if (service_slug && servicesData) {
-      console.log('🔍 Services found for', service_slug, ':', servicesData.map(s => ({
-        provider_id: s.provider_id,
-        name: s.name,
-        description: s.description
-      })));
-    }
       
     if (servicesError) {
       console.error('❌ Error fetching services:', servicesError);
     }
-    
-    console.log('✅ Found services:', servicesData?.length || 0);
 
     const services = servicesData || [];
     const providers = providersData || [];
@@ -492,10 +450,7 @@ export async function getProvidersForQuery(options: {
     let relevantProviderIds: string[] = [];
     if (service_slug && services.length > 0) {
       relevantProviderIds = [...new Set(services.map(s => s.provider_id))];
-      console.log('🎯 Providers with relevant services for', service_slug, ':', relevantProviderIds.length);
-      console.log('🔍 Relevant provider IDs:', relevantProviderIds);
     } else if (service_slug && services.length === 0) {
-      console.log('⚠️ No services found for service_slug:', service_slug);
       relevantProviderIds = []; // Si busca algo específico pero no hay servicios, no mostrar nada
     } else {
       relevantProviderIds = providers.map(p => p.id);
@@ -506,10 +461,8 @@ export async function getProvidersForQuery(options: {
       // FILTRO ESTRICTO: Si hay service_slug, DEBE estar en relevantProviderIds
       if (service_slug) {
         if (!relevantProviderIds.includes(p.id)) {
-          console.log('🚫 EXCLUDING provider', p.name, '(ID:', p.id, ') - NO relevant services for', service_slug);
           return false;
         }
-        console.log('✅ INCLUDING provider', p.name, '(ID:', p.id, ') - HAS relevant services for', service_slug);
       }
       
       // Luego filtrar por ubicación si se especifica
@@ -653,15 +606,6 @@ export async function getProvidersForQuery(options: {
         };
     });
 
-    console.log('🎯 Final candidates by service type:', candidates.length);
-    if (candidates.length > 0) {
-      console.log('📊 Sample candidate:', {
-        name: candidates[0].provider_name,
-        service: candidates[0].service_name,
-        type: candidates[0].service_type
-      });
-    }
-    
     return candidates.slice(0, limit);
   } catch (error) {
     console.error('❌ getProvidersForQuery error:', error);
@@ -705,7 +649,6 @@ async function getUserIP(): Promise<string | null> {
     const data = await response.json();
     return data.ip || null;
   } catch (error) {
-    console.warn('No se pudo obtener IP del usuario:', error);
     return null;
   }
 }
@@ -715,8 +658,6 @@ function getEstimatedCity(): string {
   try {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const language = navigator.language || 'es-MX';
-    
-    console.log('🌍 Detectando ubicación:', { timezone, language });
     
     // Mapeo simple basado en zona horaria mexicana
     if (timezone.includes('Mexico_City') || timezone.includes('America/Mexico_City')) {
@@ -742,11 +683,9 @@ function getEstimatedCity(): string {
     const index = Math.floor(Math.random() * ciudadesComunes.length);
     const selectedCity = ciudadesComunes[index];
     
-    console.log('🏙️ Ciudad estimada:', selectedCity);
     return selectedCity;
     
   } catch (error) {
-    console.warn('Error estimando ciudad:', error);
     return 'San Luis Potosí'; // Fallback a tu ciudad base
   }
 }
@@ -758,8 +697,6 @@ export async function logProviderEvent(
             'instagram_click' | 'facebook_click' | 'service_view' | 'gallery_view' | 'category_click',
   metadata: Record<string, any> = {}
 ) {
-  console.log('🎯 INICIANDO logProviderEvent:', { providerId, eventType, metadata });
-
   try {
     const sessionId = getSessionId();
     const deviceType = getDeviceType();
@@ -771,16 +708,7 @@ export async function logProviderEvent(
     const estimatedCity = getEstimatedCity();
     const estimatedCountry = 'México';
 
-    console.log('📋 Datos preparados:', {
-      sessionId: sessionId.substring(0, 8) + '...',
-      deviceType,
-      visitorIP,
-      estimatedCity,
-      userAgent: userAgent.substring(0, 50) + '...'
-    });
-
     // MÉTODO 1: Intentar usar RPC
-    console.log('📡 Intentando método RPC: log_provider_event');
     try {
       const { data: rpcData, error: rpcError } = await supabase.rpc('log_provider_event', {
         p_provider_id: providerId,
@@ -796,18 +724,12 @@ export async function logProviderEvent(
       });
 
       if (!rpcError && rpcData) {
-        console.log(`✅ RPC exitoso: ${eventType} para proveedor ${providerId}`);
-        console.log('📊 Respuesta RPC:', rpcData);
         return { success: true, eventId: rpcData, method: 'rpc' };
       } else {
-        console.warn('⚠️ RPC falló, intentando inserción directa:', rpcError);
         throw new Error('RPC failed: ' + rpcError?.message);
       }
     } catch (rpcError) {
-      console.warn('⚠️ RPC no disponible, usando inserción directa');
-      
       // MÉTODO 2: Inserción directa como fallback
-      console.log('📡 Usando inserción directa en provider_analytics');
       const { data: directData, error: directError } = await supabase
         .from('provider_analytics')
         .insert([{
@@ -829,16 +751,12 @@ export async function logProviderEvent(
         console.error('❌ Error en inserción directa:', directError);
         return { success: false, error: directError, method: 'direct' };
       }
-
-      console.log(`✅ Inserción directa exitosa: ${eventType} para proveedor ${providerId}`);
-      console.log('📊 Respuesta directa:', directData);
       
       // Intentar refrescar stats manualmente
       try {
         await supabase.rpc('refresh_provider_stats');
-        console.log('🔄 Stats refrescadas manualmente');
       } catch (refreshError) {
-        console.warn('⚠️ No se pudieron refrescar stats:', refreshError);
+        // Stats refresh error silenciado
       }
       
       return { success: true, eventId: directData.id, method: 'direct' };
@@ -862,7 +780,6 @@ export async function getProviderStats(providerId: string) {
       return { success: false, error, stats: null };
     }
 
-    console.log(`📈 Estadísticas obtenidas para proveedor ${providerId}:`, data);
     return { success: true, stats: data || {} };
 
   } catch (error) {
@@ -881,7 +798,6 @@ export async function refreshProviderStats() {
       return { success: false, error };
     }
 
-    console.log('📊 Estadísticas refrescadas exitosamente');
     return { success: true };
 
   } catch (error) {

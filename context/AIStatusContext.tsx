@@ -49,7 +49,6 @@ export const AIStatusProvider: React.FC<AIStatusProviderProps> = ({ children }) 
           table: 'ai_settings' 
         }, 
         (payload) => {
-          console.log('AI Settings changed:', payload.new);
           if (payload.new && typeof payload.new.is_enabled === 'boolean') {
             setIsAIEnabled(payload.new.is_enabled);
           }
